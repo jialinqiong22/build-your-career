@@ -324,7 +324,7 @@ export default function Home() {
           Build Your Career
         </h1>
         <p className="text-[#666666] text-lg">
-          AI 驱动的职业定位分析系统
+          观己 Discover Self —— 知人者智，自知者明。澄怀观道，择木而栖。
         </p>
         <div className="w-16 h-0.5 bg-[#0A1F3D] mx-auto mt-6"></div>
       </div>
@@ -462,9 +462,33 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-[#666666] mt-8">
-          不知道自己的性格类型？<a href="https://enneagram-personality.com/zh-Hans" target="_blank" rel="noopener noreferrer" className="text-[#0A1F3D] underline underline-offset-4 hover:no-underline">前往测试（九型人格）</a>
-        </p>
+        <div className="text-center mt-8 pt-6 border-t border-[#E5E5E5]">
+          <p className="text-sm text-[#666666] mb-3">不知道自己的性格类型？</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href="https://enneagram-personality.com/zh-Hans"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-[#0A1F3D] bg-[#F5F5F5] px-4 py-2 rounded-lg hover:bg-[#0A1F3D] hover:text-white transition-all duration-300"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              九型人格测试
+            </a>
+            <a
+              href="https://m.psyctest.cn/t/PqxDRKGv/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-[#0A1F3D] bg-[#F5F5F5] px-4 py-2 rounded-lg hover:bg-[#0A1F3D] hover:text-white transition-all duration-300"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              霍兰德职业兴趣测试（90题完整版）
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
