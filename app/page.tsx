@@ -1841,55 +1841,78 @@ export default function Home() {
   };
 
   const renderSurveyView = () => {
-    const theme = getThemeColors(mbti || 'INTJ');
+    // 高盛极简蓝色配色方案
+    const gsColors = {
+      background: '#FFFFFF',
+      headerBg: '#FFFFFF',
+      primaryBlue: '#0A1F3D',
+      lightBlue: '#1E3A5F',
+      borderBlue: '#E2E8F0',
+      textMain: '#0A1F3D',
+      textSecondary: '#4A5568',
+      inputBg: '#F7F9FC',
+      selectedBg: '#EBF2FF',
+      selectedBorder: '#0A1F3D',
+      hoverBg: '#F0F4F8',
+    };
 
     return (
-      <div className="min-h-screen" style={{ backgroundColor: `${theme.background}10` }}>
+      <div className="min-h-screen" style={{ backgroundColor: gsColors.background }}>
         {/* Header Bar */}
-        <div className="sticky top-0 z-10 backdrop-blur-sm" style={{ backgroundColor: `${theme.background}95`, borderBottom: `1px solid ${theme.accent}20` }}>
+        <div className="sticky top-0 z-10 backdrop-blur-sm" style={{ backgroundColor: gsColors.headerBg, borderBottom: `1px solid ${gsColors.borderBlue}` }}>
           <div className="max-w-2xl mx-auto px-5 py-4 flex items-center justify-between">
             <button
               onClick={() => setView('result')}
               className="flex items-center gap-2 transition-all hover:scale-105"
-              style={{ color: theme.text }}
+              style={{ color: gsColors.textMain }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               返回结果
             </button>
-            <h1 className="text-lg font-semibold" style={{ color: theme.text }}>求职困惑收集</h1>
+            <h1 className="text-lg font-semibold" style={{ color: gsColors.textMain, letterSpacing: '0.5px' }}>求职困惑收集</h1>
             <div className="w-20"></div>
           </div>
         </div>
 
         <div className="max-w-2xl mx-auto px-5 py-8">
           {/* Title */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold mb-2" style={{ color: theme.text }}>告诉我们你的求职困惑</h2>
-            <p className="text-sm opacity-70" style={{ color: theme.text }}>
+          <div className="text-center mb-10">
+            <h2 className="text-2xl font-bold mb-3" style={{ color: gsColors.textMain, letterSpacing: '0.5px' }}>告诉我们你的求职困惑</h2>
+            <p className="text-sm" style={{ color: gsColors.textSecondary }}>
               选择你遇到的问题，我们会为你提供专业建议
             </p>
           </div>
 
           {/* Problem Selection */}
-          <div className="mb-8">
-            <p className="text-sm font-semibold mb-4" style={{ color: theme.text }}>
-              你遇到哪些求职问题？<span className="text-red-500">*</span>
+          <div className="mb-10">
+            <p className="text-sm font-semibold mb-4" style={{ color: gsColors.textMain, letterSpacing: '0.5px' }}>
+              你遇到哪些求职问题？<span style={{ color: '#0A1F3D' }}>*</span>
             </p>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-2">
               {PROBLEM_OPTIONS.map((option) => (
                 <label
                   key={option.id}
-                  className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition-all ${
+                  className={`flex items-center gap-3 p-4 rounded cursor-pointer transition-all ${
                     selectedProblems.includes(option.id)
-                      ? 'ring-2'
+                      ? 'ring-1'
                       : ''
                   }`}
                   style={{
-                    backgroundColor: theme.cardBg,
-                    borderColor: selectedProblems.includes(option.id) ? theme.accent : 'transparent',
-                    borderWidth: selectedProblems.includes(option.id) ? '2px' : '0'
+                    backgroundColor: selectedProblems.includes(option.id) ? gsColors.selectedBg : gsColors.inputBg,
+                    borderColor: selectedProblems.includes(option.id) ? gsColors.selectedBorder : 'transparent',
+                    borderWidth: selectedProblems.includes(option.id) ? '1px' : '0'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!selectedProblems.includes(option.id)) {
+                      e.currentTarget.style.backgroundColor = gsColors.hoverBg;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!selectedProblems.includes(option.id)) {
+                      e.currentTarget.style.backgroundColor = gsColors.inputBg;
+                    }
                   }}
                 >
                   <input
@@ -1903,49 +1926,49 @@ export default function Home() {
                       }
                     }}
                     className="w-5 h-5 rounded"
-                    style={{ accentColor: theme.accent }}
+                    style={{ accentColor: gsColors.primaryBlue }}
                   />
-                  <span className="text-sm" style={{ color: theme.text }}>{option.label}</span>
+                  <span className="text-sm font-medium" style={{ color: gsColors.textMain }}>{option.label}</span>
                 </label>
               ))}
             </div>
           </div>
 
           {/* Contact Information */}
-          <div className="mb-8">
-            <p className="text-sm font-semibold mb-4" style={{ color: theme.text }}>
-              联系方式 <span className="text-xs opacity-60">(至少填写一项)*</span>
+          <div className="mb-10">
+            <p className="text-sm font-semibold mb-4" style={{ color: gsColors.textMain, letterSpacing: '0.5px' }}>
+              联系方式 <span className="text-xs font-normal" style={{ color: gsColors.textSecondary }}>(至少填写一项)*</span>
             </p>
             <div className="space-y-4">
               <div>
-                <label className="text-sm mb-2 block" style={{ color: theme.text }}>微信号</label>
+                <label className="text-sm mb-2 block font-medium" style={{ color: gsColors.textMain }}>微信号</label>
                 <input
                   type="text"
                   value={wechatId}
                   onChange={(e) => setWechatId(e.target.value)}
                   placeholder="请输入你的微信号"
-                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
+                  className="w-full px-4 py-3 rounded border focus:outline-none focus:ring-1 transition-all"
                   style={{
-                    backgroundColor: theme.cardBg,
-                    borderColor: `${theme.accent}40`,
-                    color: theme.text,
-                    '--tw-ring-color': theme.accent
+                    backgroundColor: gsColors.inputBg,
+                    borderColor: gsColors.borderBlue,
+                    color: gsColors.textMain,
+                    '--tw-ring-color': gsColors.primaryBlue
                   } as React.CSSProperties}
                 />
               </div>
               <div>
-                <label className="text-sm mb-2 block" style={{ color: theme.text }}>邮箱</label>
+                <label className="text-sm mb-2 block font-medium" style={{ color: gsColors.textMain }}>邮箱</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="请输入你的邮箱"
-                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
+                  className="w-full px-4 py-3 rounded border focus:outline-none focus:ring-1 transition-all"
                   style={{
-                    backgroundColor: theme.cardBg,
-                    borderColor: `${theme.accent}40`,
-                    color: theme.text,
-                    '--tw-ring-color': theme.accent
+                    backgroundColor: gsColors.inputBg,
+                    borderColor: gsColors.borderBlue,
+                    color: gsColors.textMain,
+                    '--tw-ring-color': gsColors.primaryBlue
                   } as React.CSSProperties}
                 />
               </div>
@@ -1956,14 +1979,14 @@ export default function Home() {
           <button
             onClick={handleSurveySubmit}
             disabled={surveySubmitted}
-            className="w-full py-4 rounded-lg text-white font-semibold text-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: theme.accent }}
+            className="w-full py-4 rounded text-white font-semibold text-base transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: gsColors.primaryBlue, letterSpacing: '0.5px' }}
           >
             {surveySubmitted ? '已提交 ✓' : '提交困惑，获取建议'}
           </button>
 
           {/* Info Text */}
-          <p className="text-xs text-center mt-6 opacity-60" style={{ color: theme.text }}>
+          <p className="text-xs text-center mt-6" style={{ color: gsColors.textSecondary }}>
             提交后我们会尽快通过微信或邮箱联系你，为你提供专业建议
           </p>
         </div>
