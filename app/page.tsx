@@ -2267,17 +2267,6 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-
-                {/* Expert Quote */}
-                <div className="mt-8 pt-6 border-t border-[#E5E5E5]">
-                  <h4 className="text-sm font-semibold text-[#666666] uppercase tracking-wider mb-4">专家寄语</h4>
-                  <div className="bg-[#F5F5F5] rounded-lg p-6">
-                    <p className="text-[#1A1A1A] text-sm leading-relaxed">
-                      &ldquo;{profile.expertQuote}&rdquo;
-                    </p>
-                    <p className="text-xs text-[#999999] mt-3 text-right">— Build Your Career AI</p>
-                  </div>
-                </div>
               </div>
             )}
           </div>
@@ -2561,7 +2550,7 @@ export default function Home() {
                   <svg className="w-4 h-4 text-[#0A1F3D]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
-                  完整 PDF 报告 + 专家寄语
+                  完整 PDF 报告
                 </li>
               </ul>
             </div>
