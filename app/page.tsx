@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
 
 type ViewState = 'input' | 'loading' | 'result' | 'history';
 
@@ -72,6 +73,114 @@ const MBTI_OPTIONS = [
   'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ',
   'ISTP', 'ISFP', 'ESTP', 'ESFP',
 ];
+
+// ==================== 动态主题色系统 ====================
+
+type ThemeColors = {
+  background: string;
+  text: string;
+  accent: string;
+  secondary: string;
+  cardBg: string;
+};
+
+// 根据 MBTI 类型返回主题色
+const getThemeColors = (mbti: string): ThemeColors => {
+  // NT 型 (理性派) - 冷色调
+  if (['INTJ', 'INTP', 'ENTJ', 'ENTP'].includes(mbti)) {
+    return {
+      background: '#1A1A1B', // 玄青
+      text: '#C0C0C0', // Silver
+      accent: '#4A9EFF', // 科技蓝
+      secondary: '#7B68EE', // 中紫
+      cardBg: '#252526',
+    };
+  }
+
+  // NF 型 (理想派) - 暖色调
+  if (['INFJ', 'INFP', 'ENFJ', 'ENFP'].includes(mbti)) {
+    return {
+      background: '#7397AB', // 苍筤
+      text: '#FFFFF0', // Ivory
+      accent: '#FFB6C1', // 浅粉
+      secondary: '#DDA0DD', // 梅红
+      cardBg: '#8BA8B8',
+    };
+  }
+
+  // ST 型 (现实派) - 中性冷色
+  if (['ISTJ', 'ISFJ', 'ESTJ', 'ESFJ'].includes(mbti)) {
+    return {
+      background: '#2F4F4F', // 深岩灰
+      text: '#F5F5DC', // 米色
+      accent: '#87CEEB', // 天蓝
+      secondary: '#4682B4', // 钢蓝
+      cardBg: '#3A5F5F',
+    };
+  }
+
+  // SP 型 (感知派) - 温暖活力
+  return {
+    background: '#CD853F', // 秘鲁色
+    text: '#FFF8DC', // 玉米丝
+    accent: '#FFD700', // 金色
+    secondary: '#FF6347', // 番茄红
+    cardBg: '#DAA520',
+  };
+};
+
+// 个性化加载文案生成器
+const getPersonalizedLoadingMessages = (mbti: string, holland: string, enneagram: string): string[] => {
+  const messages: string[] = [
+    `正在读取 ${mbti} 认知模式...`,
+    `分析 ${holland} 职业兴趣图谱...`,
+    `检测到 ${enneagram} 核心动机...`,
+    '正在扫描全网 20,000+ 岗位库...',
+  ];
+
+  // 根据 MBTI 添加个性化消息
+  if (['INTJ', 'INTP'].includes(mbti)) {
+    messages.push('检测到超强逻辑分析能力...');
+    messages.push('正在匹配高创新度岗位...');
+  } else if (['INFJ', 'INFP'].includes(mbti)) {
+    messages.push('发现深度共情天赋...');
+    messages.push('正在寻找有社会价值的岗位...');
+  } else if (['ENTJ', 'ESTJ'].includes(mbti)) {
+    messages.push('识别到天然领导力...');
+    messages.push('正在匹配管理类岗位...');
+  } else if (['ENFP', 'ESFP'].includes(mbti)) {
+    messages.push('发现超强感染力...');
+    messages.push('正在匹配创意类岗位...');
+  }
+
+  // 添加跨维度分析消息
+  messages.push(`交叉分析 ${mbti} × ${holland} × ${enneagram}...`);
+  messages.push('正在生成性格冲突预警...');
+  messages.push('计算避坑指南中...');
+
+  return messages;
+};
+
+// 计算稀有度评分（基于组合的独特性）
+const calculateRarity = (mbti: string, holland: string, enneagram: string): {
+  score: number;
+  label: string;
+  color: string;
+} => {
+  // 模拟稀有度计算（实际可基于真实统计数据）
+  const hash = (mbti + holland + enneagram).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const score = ((hash % 100) + 1) / 100; // 1% - 100%
+
+  if (score <= 0.05) {
+    return { score: Math.round(score * 100), label: 'SSS 级稀有', color: '#FFD700' };
+  } else if (score <= 0.15) {
+    return { score: Math.round(score * 100), label: 'SS 级稀有', color: '#C0C0C0' };
+  } else if (score <= 0.30) {
+    return { score: Math.round(score * 100), label: 'S 级稀有', color: '#CD7F32' };
+  } else {
+    return { score: Math.round(score * 100), label: '独特', color: '#4A9EFF' };
+  }
+};
 
 const LOADING_MESSAGES = [
   '正在连接全网岗位库...',
@@ -946,6 +1055,7 @@ const getPersonalityProfile = (mbti: string, holland: string, enneagram: string)
 export default function Home() {
   const [view, setView] = useState<ViewState>('input');
   const [loadingIndex, setLoadingIndex] = useState(0);
+  const [loadingMessages, setLoadingMessages] = useState<string[]>(LOADING_MESSAGES);
   const [mbti, setMbti] = useState('');
   const [holland, setHolland] = useState('');
   const [enneagram, setEnneagram] = useState('');
@@ -955,20 +1065,30 @@ export default function Home() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [history, setHistory] = useState<TestHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
+  const [shareCardUrl, setShareCardUrl] = useState('');
+  const shareCardRef = useRef<HTMLDivElement>(null);
 
   // 加载历史记录
   useEffect(() => {
     setHistory(getHistory());
   }, []);
 
+  // 更新个性化加载消息
+  useEffect(() => {
+    if (mbti && holland && enneagram) {
+      setLoadingMessages(getPersonalizedLoadingMessages(mbti, holland, enneagram));
+    }
+  }, [mbti, holland, enneagram]);
+
   useEffect(() => {
     if (view === 'loading') {
       const interval = setInterval(() => {
-        setLoadingIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+        setLoadingIndex((prev) => (prev + 1) % loadingMessages.length);
       }, 600);
       return () => clearInterval(interval);
     }
-  }, [view]);
+  }, [view, loadingMessages]);
 
   const handleGenerate = () => {
     if (!mbti || !holland || !enneagram) return;
@@ -999,6 +1119,140 @@ export default function Home() {
   const handleClearHistory = () => {
     clearHistory();
     setHistory([]);
+  };
+
+  // 生成分享卡片
+  const handleGenerateShareCard = async () => {
+    if (!shareCardRef.current) return;
+
+    try {
+      const canvas = await html2canvas(shareCardRef.current, {
+        scale: 2, // 提高清晰度
+        useCORS: true,
+        backgroundColor: null,
+      });
+
+      const imageUrl = canvas.toDataURL('image/png');
+      setShareCardUrl(imageUrl);
+      setShowShareCard(true);
+
+      // 自动下载
+      const link = document.createElement('a');
+      link.download = `我的职业性格-${mbti}-${holland}-${enneagram}.png`;
+      link.href = imageUrl;
+      link.click();
+    } catch (error) {
+      console.error('Failed to generate share card:', error);
+      alert('生成分享卡片失败，请重试');
+    }
+  };
+
+  // 分享卡片组件
+  const ShareCard = ({ mbti: cardMbti, holland: cardHolland, enneagram: cardEnneagram }: {
+    mbti: string;
+    holland: string;
+    enneagram: string;
+  }) => {
+    const profile = getPersonalityProfile(cardMbti, cardHolland, cardEnneagram);
+    const theme = getThemeColors(cardMbti);
+    const rarity = calculateRarity(cardMbti, cardHolland, cardEnneagram);
+
+    return (
+      <div
+        ref={shareCardRef}
+        className="relative w-[375px] h-[667px] rounded-3xl overflow-hidden shadow-2xl"
+        style={{
+          background: `linear-gradient(135deg, ${theme.background} 0%, ${theme.cardBg} 100%)`,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+        }}
+      >
+        {/* 装饰性背景元素 */}
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-20" style={{ background: theme.accent }} />
+        <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-10" style={{ background: theme.secondary }} />
+
+        {/* 内容区域 */}
+        <div className="relative z-10 p-8 h-full flex flex-col">
+          {/* 顶部标签 */}
+          <div className="flex justify-between items-start mb-6">
+            <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: theme.accent, color: theme.background }}>
+              Build Your Career
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="px-2 py-1 rounded text-xs font-bold" style={{ backgroundColor: rarity.color, color: theme.background }}>
+                {rarity.label}
+              </div>
+              <div className="text-xs font-bold" style={{ color: theme.text }}>
+                {rarity.score}%
+              </div>
+            </div>
+          </div>
+
+          {/* 主要内容 */}
+          <div className="flex-1 flex flex-col justify-center">
+            {/* 性格组合 */}
+            <div className="mb-4">
+              <div className="flex gap-2 mb-3">
+                <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: theme.text }}>
+                  {cardMbti}
+                </span>
+                <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: theme.text }}>
+                  {cardHolland}
+                </span>
+                <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: theme.text }}>
+                  {cardEnneagram}
+                </span>
+              </div>
+            </div>
+
+            {/* 人设标题 */}
+            <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ color: theme.text, fontFamily: 'Georgia, serif' }}>
+              {profile.personaTitle}
+            </h1>
+
+            {/* 简化版雷达图 */}
+            <div className="mb-4">
+              {profile.careerRadar.slice(0, 3).map((item) => (
+                <div key={item.name} className="mb-2">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs" style={{ color: theme.text }}>{item.name}</span>
+                    <span className="text-xs font-bold" style={{ color: theme.accent }}>{item.score}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${item.score}%`, backgroundColor: theme.accent }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 推荐岗位 */}
+            <div className="mb-4">
+              <p className="text-xs mb-2 opacity-70" style={{ color: theme.text }}>推荐岗位</p>
+              <div className="flex flex-wrap gap-2">
+                {profile.previewJobs.slice(0, 3).map((job) => (
+                  <span key={job.name} className="px-2 py-1 rounded text-xs" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: theme.text }}>
+                    {job.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 底部信息 */}
+          <div className="text-center">
+            <p className="text-xs opacity-60 mb-2" style={{ color: theme.text }}>
+              观己 Discover Self —— 知人者智，自知者明
+            </p>
+            {/* 二维码占位符 */}
+            <div className="w-16 h-16 mx-auto rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+              <span className="text-xs" style={{ color: theme.text }}>扫码测试</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const handleExampleClick = (exampleCase: typeof EXAMPLE_CASES[0]) => {
@@ -1247,7 +1501,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col items-center justify-center px-5 bg-[#F5F5F5]">
       <div className="w-16 h-16 border-4 border-[#E5E5E5] border-t-[#0A1F3D] rounded-full animate-spin mb-8"></div>
       <p className="text-[#1A1A1A] text-lg font-medium">
-        {LOADING_MESSAGES[loadingIndex]}
+        {loadingMessages[loadingIndex]}
       </p>
       <div className="w-64 h-1 bg-[#E5E5E5] rounded-full mt-8 overflow-hidden">
         <div className="h-full bg-[#0A1F3D] animate-[loading_3s_ease-in-out_forwards]"></div>
@@ -1257,49 +1511,68 @@ export default function Home() {
 
   const renderResultView = () => {
     const profile = getPersonalityProfile(mbti, holland, enneagram);
+    const theme = getThemeColors(mbti);
+    const rarity = calculateRarity(mbti, holland, enneagram);
 
     return (
-      <div className="min-h-screen bg-[#F5F5F5]">
+      <div className="min-h-screen" style={{ backgroundColor: `${theme.background}10` }}>
         {/* Header Bar */}
-        <div className="bg-white border-b border-[#E5E5E5] sticky top-0 z-10">
+        <div className="sticky top-0 z-10 backdrop-blur-sm" style={{ backgroundColor: `${theme.background}95`, borderBottomColor: `${theme.accent}20` }}>
           <div className="max-w-4xl mx-auto px-5 py-4 flex items-center justify-between">
             <button
               onClick={() => {
                 setView('input');
                 setIsUnlocked(false);
               }}
-              className="text-sm text-[#666666] hover:text-[#0A1F3D] transition-colors flex items-center gap-2"
+              className="text-sm hover:opacity-80 transition-opacity flex items-center gap-2"
+              style={{ color: theme.text }}
             >
               <span>←</span> 重新测试
             </button>
-            <span className="text-sm font-semibold text-[#0A1F3D]">职业分析报告</span>
-            <div className="w-16"></div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold" style={{ color: theme.text }}>职业分析报告</span>
+              <button
+                onClick={handleGenerateShareCard}
+                className="px-3 py-1 rounded-full text-xs font-bold hover:opacity-80 transition-opacity flex items-center gap-1"
+                style={{ backgroundColor: theme.accent, color: theme.background }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                生成海报
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="max-w-4xl mx-auto px-5 py-12">
           {/* Persona Tag */}
-          <div className="bg-white rounded-lg border border-[#E5E5E5] p-8 mb-6">
+          <div className="rounded-lg border p-8 mb-6" style={{ backgroundColor: theme.cardBg, borderColor: `${theme.accent}30`, color: theme.text }}>
             <div className="text-center">
-              <p className="text-xs font-semibold text-[#666666] uppercase tracking-wider mb-3">AI 人设标签</p>
-              <h2 className="text-3xl font-bold text-[#0A1F3D]">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <p className="text-xs font-semibold uppercase tracking-wider opacity-70">AI 人设标签</p>
+                <div className="px-2 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: rarity.color, color: theme.background }}>
+                  {rarity.label} {rarity.score}%
+                </div>
+              </div>
+              <h2 className="text-3xl font-bold" style={{ color: theme.text }}>
                 {profile.personaTitle}
               </h2>
-              <p className="text-sm text-[#666666] mt-3">{mbti} · {holland} · {enneagram}</p>
+              <p className="text-sm mt-3 opacity-80">{mbti} · {holland} · {enneagram}</p>
             </div>
           </div>
 
           {/* Core Advantages */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-[#0A1F3D] mb-4 flex items-center gap-3">
-              <span className="w-8 h-0.5 bg-[#0A1F3D]"></span>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-3" style={{ color: theme.text }}>
+              <span className="w-8 h-0.5" style={{ backgroundColor: theme.accent }}></span>
               核心优势
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {profile.coreAdvantages.map((item, i) => (
-                <div key={i} className="bg-white rounded-lg border border-[#E5E5E5] p-6">
-                  <h4 className="font-semibold text-[#1A1A1A] mb-2">{item.title}</h4>
-                  <p className="text-sm text-[#666666] leading-relaxed">{item.desc}</p>
+                <div key={i} className="rounded-lg border p-6" style={{ backgroundColor: theme.cardBg, borderColor: `${theme.secondary}30`, color: theme.text }}>
+                  <h4 className="font-semibold mb-2">{item.title}</h4>
+                  <p className="text-sm leading-relaxed opacity-80">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -1307,22 +1580,22 @@ export default function Home() {
 
           {/* Career Radar */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-[#0A1F3D] mb-4 flex items-center gap-3">
-              <span className="w-8 h-0.5 bg-[#0A1F3D]"></span>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-3" style={{ color: theme.text }}>
+              <span className="w-8 h-0.5" style={{ backgroundColor: theme.accent }}></span>
               职场六维雷达
             </h3>
-            <div className="bg-white rounded-lg border border-[#E5E5E5] p-6">
+            <div className="rounded-lg border p-6" style={{ backgroundColor: theme.cardBg, borderColor: `${theme.secondary}30` }}>
               <div className="space-y-4">
                 {profile.careerRadar.map((item) => (
                   <div key={item.name}>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-[#1A1A1A]">{item.name}</span>
-                      <span className="text-sm font-bold text-[#0A1F3D]">{item.score}</span>
+                      <span className="text-sm font-medium" style={{ color: theme.text }}>{item.name}</span>
+                      <span className="text-sm font-bold" style={{ color: theme.accent }}>{item.score}</span>
                     </div>
-                    <div className="h-2 bg-[#E5E5E5] rounded-full overflow-hidden">
+                    <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${theme.text}10` }}>
                       <div
-                        className="h-full bg-[#0A1F3D] rounded-full transition-all duration-1000"
-                        style={{ width: `${item.score}%` }}
+                        className="h-full rounded-full transition-all duration-1000"
+                        style={{ width: `${item.score}%`, backgroundColor: theme.accent }}
                       />
                     </div>
                   </div>
@@ -1333,21 +1606,21 @@ export default function Home() {
 
           {/* Risk Warning */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-[#0A1F3D] mb-4 flex items-center gap-3">
-              <span className="w-8 h-0.5 bg-[#0A1F3D]"></span>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-3" style={{ color: theme.text }}>
+              <span className="w-8 h-0.5" style={{ backgroundColor: theme.accent }}></span>
               避坑预警
             </h3>
-            <div className="bg-white rounded-lg border border-[#E5E5E5] p-6">
+            <div className="rounded-lg border p-6" style={{ backgroundColor: theme.cardBg, borderColor: `${theme.secondary}30` }}>
               <div className="space-y-6">
                 <div>
-                  <h4 className="font-semibold text-[#1A1A1A] mb-2">性格黑洞</h4>
-                  <p className="text-sm text-[#666666] leading-relaxed">
+                  <h4 className="font-semibold mb-2" style={{ color: theme.text }}>性格黑洞</h4>
+                  <p className="text-sm leading-relaxed opacity-80" style={{ color: theme.text }}>
                     {profile.riskBlackhole}
                   </p>
                 </div>
-                <div className="border-t border-[#E5E5E5] pt-6">
-                  <h4 className="font-semibold text-[#1A1A1A] mb-2">职场雷区</h4>
-                  <p className="text-sm text-[#666666] leading-relaxed">
+                <div className="border-t pt-6" style={{ borderColor: `${theme.secondary}30` }}>
+                  <h4 className="font-semibold mb-2" style={{ color: theme.text }}>职场雷区</h4>
+                  <p className="text-sm leading-relaxed opacity-80" style={{ color: theme.text }}>
                     {profile.riskWorkplace}
                   </p>
                 </div>
@@ -1357,23 +1630,23 @@ export default function Home() {
 
           {/* Preview Jobs (2 positions) */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-[#0A1F3D] mb-4 flex items-center gap-3">
-              <span className="w-8 h-0.5 bg-[#0A1F3D]"></span>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-3" style={{ color: theme.text }}>
+              <span className="w-8 h-0.5" style={{ backgroundColor: theme.accent }}></span>
               推荐岗位预览
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {profile.previewJobs.map((job, i) => (
-                <div key={i} className="bg-white rounded-lg border border-[#E5E5E5] p-5">
+                <div key={i} className="rounded-lg border p-5" style={{ backgroundColor: theme.cardBg, borderColor: `${theme.secondary}30` }}>
                   <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-semibold text-[#1A1A1A]">{job.name}</h4>
-                    <span className="text-sm font-bold text-[#0A1F3D] bg-[#F5F5F5] px-2 py-1 rounded">{job.match}%</span>
+                    <h4 className="font-semibold" style={{ color: theme.text }}>{job.name}</h4>
+                    <span className="text-sm font-bold px-2 py-1 rounded" style={{ backgroundColor: theme.accent, color: theme.background }}>{job.match}%</span>
                   </div>
-                  <p className="text-xs text-[#666666] mb-2">{job.logic}</p>
-                  <p className="text-xs text-[#999999]">入行门槛：{job.threshold}</p>
+                  <p className="text-xs mb-2 opacity-80" style={{ color: theme.text }}>{job.logic}</p>
+                  <p className="text-xs opacity-60" style={{ color: theme.text }}>入行门槛：{job.threshold}</p>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-[#999999] mt-3 text-center">解锁后查看 Top 10 完整岗位推荐</p>
+            <p className="text-xs mt-3 text-center opacity-60" style={{ color: theme.text }}>解锁后查看 Top 10 完整岗位推荐</p>
           </div>
 
           {/* Locked Section */}
@@ -1591,6 +1864,56 @@ export default function Home() {
       {view === 'loading' && renderLoadingView()}
       {view === 'result' && renderResultView()}
       {renderModal()}
+
+      {/* Hidden ShareCard for screenshot generation */}
+      {view === 'result' && (
+        <div className="fixed -left-[9999px] top-0">
+          <ShareCard mbti={mbti} holland={holland} enneagram={enneagram} />
+        </div>
+      )}
+
+      {/* Share Card Modal */}
+      {showShareCard && shareCardUrl && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/70 z-50 transition-opacity"
+            onClick={() => setShowShareCard(false)}
+          />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4">
+            <button
+              onClick={() => setShowShareCard(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="text-xl font-bold text-center mb-4" style={{ color: '#0A1F3D' }}>
+              分享卡片已生成！
+            </h3>
+            <div className="mb-4">
+              <img src={shareCardUrl} alt="分享卡片" className="w-full rounded-lg shadow-lg" />
+            </div>
+            <p className="text-sm text-center text-gray-600 mb-4">
+              图片已自动下载，快去小红书或朋友圈分享吧！
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowShareCard(false)}
+                className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+              >
+                关闭
+              </button>
+              <button
+                onClick={handleGenerateShareCard}
+                className="flex-1 bg-[#0A1F3D] text-white py-3 rounded-lg font-semibold hover:bg-[#0A1830] transition-colors"
+              >
+                重新生成
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       <style jsx>{`
         @keyframes loading {
