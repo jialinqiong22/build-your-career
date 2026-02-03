@@ -1172,8 +1172,112 @@ export default function Home() {
     }
   };
 
+  // 发送数据到飞书多维表格
+  const sendToFeishu = async (data: any) => {
+    // 飞书 Webhook URL - 请替换为你的实际 URL
+    const FEISHU_WEBHOOK_URL = process.env.NEXT_PUBLIC_FEISHU_WEBHOOK_URL || 'YOUR_WEBHOOK_URL_HERE';
+
+    if (FEISHU_WEBHOOK_URL === 'YOUR_WEBHOOK_URL_HERE') {
+      console.warn('飞书 Webhook URL 未配置，跳过发送');
+      return;
+    }
+
+    // 获取用户人格画像
+    const profile = getPersonalityProfile(data.mbti, data.holland, data.enneagram);
+
+    // 构建飞书消息卡片
+    const feishuMessage = {
+      msg_type: 'interactive',
+      card: {
+        header: {
+          title: {
+            tag: 'plain_text',
+            content: '🔔 新用户提交了求职困惑'
+          },
+          template: 'blue'
+        },
+        elements: [
+          {
+            tag: 'div',
+            text: {
+              tag: 'lark_md',
+              content: '**👤 用户画像**\n' +
+                `• **MBTI**: ${data.mbti}\n` +
+                `• **霍兰德**: ${data.holland}\n` +
+                `• **九型人格**: ${data.enneagram}\n` +
+                `• **人格类型**: ${profile.personaTitle}\n` +
+                `• **稀有度**: ${calculateRarity(data.mbti, data.holland, data.enneagram).label}`
+            }
+          },
+          {
+            tag: 'hr'
+          },
+          {
+            tag: 'div',
+            text: {
+              tag: 'lark_md',
+              content: '**📋 遇到的问题**\n' +
+                data.problems.map((id: string) => {
+                  const option = PROBLEM_OPTIONS.find(o => o.id === id);
+                  return `• ${option?.label || id}`;
+                }).join('\n')
+            }
+          },
+          {
+            tag: 'hr'
+          },
+          {
+            tag: 'div',
+            text: {
+              tag: 'lark_md',
+              content: '**📞 联系方式**\n' +
+                (data.wechatId ? `• **微信**: ${data.wechatId}\n` : '') +
+                (data.email ? `• **邮箱**: ${data.email}\n` : '')
+            }
+          },
+          {
+            tag: 'hr'
+          },
+          {
+            tag: 'div',
+            text: {
+              tag: 'lark_md',
+              content: '**💡 快速建议**\n' +
+                profile.previewJobs?.slice(0, 3).map((job: any) =>
+                  `• ${job.name} (匹配度 ${job.match}%)`
+                ).join('\n') || '暂无建议'
+            }
+          },
+          {
+            tag: 'div',
+            text: {
+              tag: 'plain_text',
+              content: `提交时间: ${new Date(data.timestamp).toLocaleString('zh-CN')}`
+            }
+          }
+        ]
+      }
+    };
+
+    try {
+      const response = await fetch(FEISHU_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feishuMessage),
+      });
+
+      if (!response.ok) {
+        console.error('飞书发送失败:', await response.text());
+      }
+    } catch (error) {
+      console.error('发送到飞书时出错:', error);
+    }
+  };
+
   // 处理问卷提交
-  const handleSurveySubmit = () => {
+  const handleSurveySubmit = async () => {
     if (selectedProblems.length === 0) {
       alert('请至少选择一个问题');
       return;
@@ -1197,6 +1301,9 @@ export default function Home() {
     const existingSurveys = JSON.parse(localStorage.getItem('career_gps_surveys') || '[]');
     existingSurveys.push(surveyData);
     localStorage.setItem('career_gps_surveys', JSON.stringify(existingSurveys.slice(-100)));
+
+    // 发送到飞书多维表格
+    await sendToFeishu(surveyData);
 
     alert('提交成功！我们会尽快联系你，为你提供专业建议。');
     setSurveySubmitted(true);
