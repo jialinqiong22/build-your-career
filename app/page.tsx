@@ -2,7 +2,69 @@
 
 import { useState, useEffect } from 'react';
 
-type ViewState = 'input' | 'loading' | 'result';
+type ViewState = 'input' | 'loading' | 'result' | 'history';
+
+// 历史记录类型
+type TestHistory = {
+  id: string;
+  mbti: string;
+  holland: string;
+  enneagram: string;
+  personaTitle: string;
+  timestamp: number;
+};
+
+// localStorage 操作
+const HISTORY_STORAGE_KEY = 'career_gps_history';
+const MAX_HISTORY_COUNT = 10;
+
+const saveToHistory = (mbti: string, holland: string, enneagram: string, personaTitle: string) => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const existingHistory = getHistory();
+    const newRecord: TestHistory = {
+      id: Date.now().toString(),
+      mbti,
+      holland,
+      enneagram,
+      personaTitle,
+      timestamp: Date.now(),
+    };
+
+    // 去重：如果已存在相同组合，先删除旧记录
+    const filteredHistory = existingHistory.filter(
+      (h) => !(h.mbti === mbti && h.holland === holland && h.enneagram === enneagram)
+    );
+
+    // 添加新记录并保留最近 10 条
+    const updatedHistory = [newRecord, ...filteredHistory].slice(0, MAX_HISTORY_COUNT);
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedHistory));
+  } catch (error) {
+    console.error('Failed to save history:', error);
+  }
+};
+
+const getHistory = (): TestHistory[] => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Failed to get history:', error);
+    return [];
+  }
+};
+
+const clearHistory = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(HISTORY_STORAGE_KEY);
+  } catch (error) {
+    console.error('Failed to clear history:', error);
+  }
+};
 
 const MBTI_OPTIONS = [
   'INTJ', 'INTP', 'ENTJ', 'ENTP',
@@ -70,7 +132,7 @@ type PersonalityProfile = {
   careerRadar: Array<{ name: string; score: number }>;
   riskBlackhole: string;
   riskWorkplace: string;
-  previewJobs: Array<{ name: string; match: number; logic: string; threshold: string }>;
+  previewJobs: Array<{ name: string; match: number; logic: string; threshold: string; advice?: string }>;
   fullJobs: Array<{ name: string; match: number; logic: string; threshold: string; advice: string }>;
   expertQuote: string;
   salary: { entry: string; mid: string; senior: string };
@@ -232,6 +294,612 @@ const getPersonalityProfile = (mbti: string, holland: string, enneagram: string)
       expertQuote: '你的创意是天赋，但需要执行力来兑现价值。ENFP 7w8 需要学会的是：少开几个项目，把每个项目真正做透做深。完成比完美更重要。',
       salary: { entry: '12-22K', mid: '25-45K', senior: '45-80K' },
     },
+
+    // INFP AIS 9w1 - 理想主义治愈者
+    'INFP-AIS-9w1': {
+      personaTitle: '温柔的治愈者',
+      coreAdvantages: [
+        { title: '理想主义旗手', desc: '坚持内心价值观，追求有意义的工作' },
+        { title: '共情能力超强', desc: '深度理解他人情感，温暖人心' },
+        { title: '创意无限', desc: '天马行空的想象力，独特的表达方式' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 93 },
+        { name: '逻辑推演', score: 65 },
+        { name: '抗压韧性', score: 72 },
+        { name: '落地执行', score: 68 },
+        { name: '影响力', score: 78 },
+        { name: '情绪资本', score: 96 },
+      ],
+      riskBlackhole: 'INFP 9w1 的致命短板：过度理想化+难以拒绝他人。你的完美主义可能让自己陷入自我怀疑，容易被他人情绪影响。',
+      riskWorkplace: '以下环境会让你痛苦：高压竞争+利益至上+人际冷漠+机械重复。你需要意义感和人文关怀，纯粹的商业环境会让你失去热情。',
+      previewJobs: [
+        { name: '心理咨询师', match: 93, logic: '用共情能力帮助他人解决心理问题', threshold: '心理学专业，咨询师资格证' },
+        { name: '内容策划', match: 89, logic: '用真挚的情感打动人心', threshold: '写作能力，同理心' },
+      ],
+      fullJobs: [
+        { name: '心理咨询师', match: 93, logic: '用共情能力帮助他人解决心理问题', threshold: '心理学专业，咨询师资格证', advice: '积累实践经验，持续督导学习' },
+        { name: '内容策划', match: 89, logic: '用真挚的情感打动人心', threshold: '写作能力，同理心', advice: '找到自己真正热爱的领域' },
+        { name: '用户体验研究员', match: 86, logic: '深入理解用户需求和情感', threshold: '用户研究方法，同理心', advice: '学会用数据支撑你的洞察' },
+        { name: '品牌文案', match: 84, logic: '用文字传递品牌温度', threshold: '文字功底，创意能力', advice: '建立个人作品集' },
+        { name: '教育顾问', match: 81, logic: '用耐心和专业帮助家长', threshold: '教育知识，沟通能力', advice: '持续学习最新的教育理念' },
+        { name: '社群运营', match: 79, logic: '营造温暖有爱的社群氛围', threshold: '沟通能力，活动策划', advice: '真诚对待每一个成员' },
+        { name: '公益项目专员', match: 77, logic: '为弱势群体发声和提供帮助', threshold: '社会责任感，组织能力', advice: '选择你真正关心的议题' },
+        { name: '编辑', match: 74, logic: '打磨文字，传递有价值的内容', threshold: '文字功底，细心耐心', advice: '多读多写，积累经验' },
+        { name: '培训师', match: 71, logic: '用温暖的方式传授知识', threshold: '专业知识+演讲能力', advice: '找到适合自己的授课风格' },
+        { name: '活动策划', match: 68, logic: '策划有意义的活动', threshold: '创意能力，执行力', advice: '注重活动的情感体验' },
+      ],
+      expertQuote: '你的理想主义是珍贵的礼物，但别让它成为沉重的负担。INFP 9w1 需要学会的是：适当的自我保护不是自私，而是为了更可持续地帮助他人。',
+      salary: { entry: '10-18K', mid: '22-40K', senior: '40-70K' },
+    },
+
+    // ENTP RIE 8w7 - 创新挑战者
+    'ENTP-RIE-8w7': {
+      personaTitle: '创新颠覆者',
+      coreAdvantages: [
+        { title: '创意风暴', desc: '总是有打破常规的新点子' },
+        { title: '辩论高手', desc: '擅长从多个角度分析问题' },
+        { title: '快速学习', desc: '对新事物充满好奇，学习能力强' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 97 },
+        { name: '逻辑推演', score: 90 },
+        { name: '抗压韧性', score: 75 },
+        { name: '落地执行', score: 70 },
+        { name: '影响力', score: 88 },
+        { name: '情绪资本', score: 68 },
+      ],
+      riskBlackhole: 'ENTP 8w7 的致命短板：容易虎头蛇尾+过于自信。你可能同时开太多项目而无法完成，忽视细节和执行力。',
+      riskWorkplace: '以下环境会让你痛苦：严格规范+重复执行+缺乏挑战+层级森严。你需要自由和刺激，传统体制会让你窒息。',
+      previewJobs: [
+        { name: '产品经理', match: 92, logic: '用创新思维打造颠覆性产品', threshold: '产品思维，跨部门沟通' },
+        { name: '创业公司CEO', match: 89, logic: '敢于冒险，快速试错', threshold: '领导力，抗压能力' },
+      ],
+      fullJobs: [
+        { name: '产品经理', match: 92, logic: '用创新思维打造颠覆性产品', threshold: '产品思维，跨部门沟通', advice: '学会专注，不要什么都想做' },
+        { name: '创业公司CEO', match: 89, logic: '敢于冒险，快速试错', threshold: '领导力，抗压能力', advice: '找一个执行力强的合伙人' },
+        { name: '战略咨询顾问', match: 86, logic: '为客户带来创新解决方案', threshold: '名校MBA，商业分析能力', advice: '积累不同行业的案例' },
+        { name: '市场营销总监', match: 84, logic: '策划出人意料营销活动', threshold: '营销知识，创意能力', advice: '关注新兴营销渠道' },
+        { name: '用户体验设计师', match: 81, logic: '设计突破常规的产品体验', threshold: '设计/心理学背景，同理心', advice: '多做用户测试验证想法' },
+        { name: '内容创作者', match: 79, logic: '用独特视角吸引粉丝', threshold: '创作能力，个人魅力', advice: '持续输出有价值的内容' },
+        { name: '商业分析师', match: 76, logic: '发现别人看不到的商业机会', threshold: '商业敏感度，逻辑思维', advice: '多关注创业动态' },
+        { name: '投资经理', match: 73, logic: '识别有潜力的创业项目', threshold: '财务知识，行业洞察', advice: '积累项目资源' },
+        { name: '科技创新专员', match: 70, logic: '推动企业技术创新', threshold: '技术理解，创新思维', advice: '保持对前沿技术的敏感度' },
+        { name: '品牌策划', match: 67, logic: '打造差异化的品牌形象', threshold: '品牌营销知识，创意能力', advice: '研究成功的品牌案例' },
+      ],
+      expertQuote: '你的创新思维是难得的天赋，但需要执行力来兑现价值。ENTP 8w7 需要学会的是：专注做好一件事，比同时做十件半成品更有价值。',
+      salary: { entry: '15-25K', mid: '30-60K', senior: '60-120K' },
+    },
+
+    // ISFJ SEC 2w3 - 温暖守护者
+    'ISFJ-SEC-2w3': {
+      personaTitle: '温暖的守护者',
+      coreAdvantages: [
+        { title: '默默奉献', desc: '用实际行动照顾身边的人' },
+        { title: '细节关注', desc: '能察觉他人忽略的小需求' },
+        { title: '忠诚可靠', desc: '值得信赖的团队伙伴' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 63 },
+        { name: '逻辑推演', score: 74 },
+        { name: '抗压韧性', score: 90 },
+        { name: '落地执行', score: 94 },
+        { name: '影响力', score: 75 },
+        { name: '情绪资本', score: 92 },
+      ],
+      riskBlackhole: 'ISFJ 2w3 的致命短板：过度付出+难以拒绝。你可能为了帮助他人而忽视自己，容易被不感恩的人伤害。',
+      riskWorkplace: '以下环境会让你痛苦：激烈竞争+频繁变动+人际关系复杂+需要自我推销。你需要稳定和认可，高压环境会让你焦虑。',
+      previewJobs: [
+        { name: '护士', match: 94, logic: '用细心和耐心照顾患者', threshold: '护理专业，执业资格证' },
+        { name: '行政专员', match: 91, logic: '让办公室运转更顺畅', threshold: '组织能力，细心耐心', advice: '掌握办公软件技能' },
+      ],
+      fullJobs: [
+        { name: '护士', match: 94, logic: '用细心和耐心照顾患者', threshold: '护理专业，执业资格证', advice: '培养抗压能力，学会自我关怀' },
+        { name: '行政专员', match: 91, logic: '让办公室运转更顺畅', threshold: '组织能力，细心耐心', advice: '掌握办公软件技能' },
+        { name: '人力资源专员', match: 88, logic: '处理员工关系，营造温暖氛围', threshold: '人力资源管理，沟通能力', advice: '学习劳动法规' },
+        { name: '客户服务专员', match: 85, logic: '耐心解答用户问题', threshold: '服务意识，问题解决', advice: '学会情绪管理' },
+        { name: '图书管理员', match: 83, logic: '安静整理知识，服务读者', threshold: '细心耐心，组织能力', advice: '学习信息管理知识' },
+        { name: '教育顾问', match: 80, logic: '耐心和家长沟通', threshold: '教育知识，沟通能力', advice: '积累成功案例' },
+        { name: '社会工作者', match: 77, logic: '帮助弱势群体', threshold: '社会责任感，耐心', advice: '考取社工资格证' },
+        { name: '办公室主任', match: 74, logic: '细致处理日常事务', threshold: '组织能力，多任务处理', advice: '建立标准化流程' },
+        { name: '档案管理员', match: 71, logic: '整理和保护重要文件', threshold: '细心责任心', advice: '学习档案管理知识' },
+        { name: '售后客服', match: 68, logic: '耐心解决客户问题', threshold: '服务意识，问题解决', advice: '积累常见问题处理经验' },
+      ],
+      expertQuote: '你的温暖和可靠是珍贵的品质，但别忘了也要照顾好自己。ISFJ 2w3 需要学会的是：设立边界不是自私，而是为了更可持续地帮助他人。',
+      salary: { entry: '8-15K', mid: '18-35K', senior: '35-60K' },
+    },
+
+    // ESTJ CER 3w4 - 实干领导者
+    'ESTJ-CER-3w4': {
+      personaTitle: '高效的领导者',
+      coreAdvantages: [
+        { title: '执行力强', desc: '说到做到，效率至上' },
+        { title: '组织天赋', desc: '善于规划和安排资源' },
+        { title: '目标导向', desc: '明确目标，全力以赴达成' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 70 },
+        { name: '逻辑推演', score: 85 },
+        { name: '抗压韧性', score: 92 },
+        { name: '落地执行', score: 98 },
+        { name: '影响力', score: 88 },
+        { name: '情绪资本', score: 65 },
+      ],
+      riskBlackhole: 'ESTJ 3w4 的致命短板：过于强势+缺乏耐心。你的高效可能让团队感到压力，容易忽视他人的感受。',
+      riskWorkplace: '以下环境会让你痛苦：目标模糊+决策缓慢+缺乏效率+过度强调情感。你需要清晰的目标和执行，官僚体系会让你沮丧。',
+      previewJobs: [
+        { name: '运营总监', match: 93, logic: '用高效的执行力推动业务', threshold: '5年以上运营经验，团队管理' },
+        { name: '项目经理', match: 90, logic: '确保项目按时高质量交付', threshold: 'PMP认证，组织协调', advice: '学会使用项目管理工具' },
+      ],
+      fullJobs: [
+        { name: '运营总监', match: 93, logic: '用高效的执行力推动业务', threshold: '5年以上运营经验，团队管理', advice: '提升领导力，学会授权' },
+        { name: '项目经理', match: 90, logic: '确保项目按时高质量交付', threshold: 'PMP认证，组织协调', advice: '学会使用项目管理工具' },
+        { name: '部门主管', match: 87, logic: '带领团队达成业绩目标', threshold: '3年+相关经验，管理能力', advice: '学习管理技巧' },
+        { name: '销售总监', match: 85, logic: '制定销售策略，推动团队执行', threshold: '销售经验+管理能力', advice: '用数据驱动决策' },
+        { name: '供应链经理', match: 82, logic: '优化供应链效率', threshold: '供应链知识，管理能力', advice: '关注成本和效率' },
+        { name: '财务经理', match: 80, logic: '确保财务规范和高效运转', threshold: 'CPA/CFA，管理经验', advice: '提升团队管理能力' },
+        { name: '生产经理', match: 77, logic: '确保生产计划顺利执行', threshold: '生产管理知识，执行力', advice: '学习精益生产' },
+        { name: '酒店总经理', match: 74, logic: '全面管理酒店运营', threshold: '酒店管理经验，领导力', advice: '注重服务质量' },
+        { name: '连锁店长', match: 71, logic: '管理门店日常运营', threshold: '零售经验，管理能力', advice: '建立标准化流程' },
+        { name: '办公室主任', match: 68, logic: '高效处理日常事务', threshold: '组织能力，执行力', advice: '建立工作标准' },
+      ],
+      expertQuote: '你的执行力是难得的天赋，但别忘了团队是由人组成的。ESTJ 3w4 需要学会的是：效率和人性化并不冲突，关怀团队才能走得更远。',
+      salary: { entry: '15-25K', mid: '35-60K', senior: '60-100K' },
+    },
+
+    // INFJ AIE 4w5 - 深邃洞察者
+    'INFJ-AIE-4w5': {
+      personaTitle: '神秘的洞察者',
+      coreAdvantages: [
+        { title: '深度洞察', desc: '能看到事物背后的本质' },
+        { title: '理想主义', desc: '追求意义和价值，不甘平庸' },
+        { title: '直觉敏锐', desc: '能预测趋势，察觉潜在问题' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 88 },
+        { name: '逻辑推演', score: 82 },
+        { name: '抗压韧性', score: 70 },
+        { name: '落地执行', score: 72 },
+        { name: '影响力', score: 80 },
+        { name: '情绪资本', score: 92 },
+      ],
+      riskBlackhole: 'INFJ 4w5 的致命短板：过度完美+容易倦怠。你的理想主义可能让你失望，深度思考可能让你与现实脱节。',
+      riskWorkplace: '以下环境会让你痛苦：肤浅浮躁+利益至上+人际复杂+缺乏意义。你需要深度和意义感，纯粹商业环境会让你空虚。',
+      previewJobs: [
+        { name: '职业规划师', match: 94, logic: '用洞察力帮助他人规划职业', threshold: 'HR/心理学背景，咨询能力' },
+        { name: '品牌策略', match: 90, logic: '深入理解品牌内涵和价值', threshold: '品牌知识，战略思维', advice: '多研究成功品牌案例' },
+      ],
+      fullJobs: [
+        { name: '职业规划师', match: 94, logic: '用洞察力帮助他人规划职业', threshold: 'HR/心理学背景，咨询能力', advice: '积累行业知识和人脉' },
+        { name: '品牌策略', match: 90, logic: '深入理解品牌内涵和价值', threshold: '品牌知识，战略思维', advice: '多研究成功品牌案例' },
+        { name: '用户体验研究员', match: 87, logic: '深度理解用户行为动机', threshold: '心理学背景，研究方法', advice: '学会用数据支撑洞察' },
+        { name: '组织发展顾问', match: 84, logic: '帮助企业改善组织效能', threshold: 'OD知识，咨询能力', advice: '积累不同行业的案例' },
+        { name: '心理咨询师', match: 82, logic: '深入理解他人内心世界', threshold: '心理学专业，咨询师资格证', advice: '持续督导和个人成长' },
+        { name: '内容总监', match: 79, logic: '规划有深度的内容策略', threshold: '内容经验，战略思维', advice: '关注内容质量而非数量' },
+        { name: '教育顾问', match: 76, logic: '深度理解学生需求', threshold: '教育知识，沟通能力', advice: '持续学习新的教育理念' },
+        { name: '社会责任专员', match: 73, logic: '推动企业社会责任项目', threshold: '项目管理，社会责任意识', advice: '关注ESG趋势' },
+        { name: '市场研究分析师', match: 70, logic: '深入分析市场趋势', threshold: '研究方法，分析能力', advice: '培养商业敏感度' },
+        { name: '编辑', match: 67, logic: '打磨有深度的内容', threshold: '文字功底，判断力', advice: '建立个人审稿标准' },
+      ],
+      expertQuote: '你的洞察力是珍贵的礼物，但别让它成为孤立的枷锁。INFJ 4w5 需要学会的是：理想需要落地才能改变世界，适度接地气才能更好地帮助他人。',
+      salary: { entry: '12-20K', mid: '25-45K', senior: '45-80K' },
+    },
+
+    // ENTJ ECI 8w3 - 果断指挥官
+    'ENTJ-ECI-8w3': {
+      personaTitle: '天生的领导者',
+      coreAdvantages: [
+        { title: '战略思维', desc: '能看到全局，制定长远规划' },
+        { title: '果断决策', desc: '能在复杂情况下快速做出决定' },
+        { title: '组织能力', desc: '善于调动资源达成目标' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 85 },
+        { name: '逻辑推演', score: 95 },
+        { name: '抗压韧性', score: 90 },
+        { name: '落地执行', score: 94 },
+        { name: '影响力', score: 92 },
+        { name: '情绪资本', score: 60 },
+      ],
+      riskBlackhole: 'ENTJ 8w3 的致命短板：过于强势+缺乏耐心。你的果断可能让人感到压抑，容易忽视团队的情感需求。',
+      riskWorkplace: '以下环境会让你痛苦：决策缓慢+层级过多+缺乏挑战+目标模糊。你需要自主权和挑战，官僚体系会让你窒息。',
+      previewJobs: [
+        { name: 'CEO/总经理', match: 95, logic: '制定战略，带领团队实现目标', threshold: '10年+管理经验，领导力' },
+        { name: '战略总监', match: 92, logic: '制定企业长期发展战略', threshold: '名校MBA，战略思维', advice: '积累不同行业经验' },
+      ],
+      fullJobs: [
+        { name: 'CEO/总经理', match: 95, logic: '制定战略，带领团队实现目标', threshold: '10年+管理经验，领导力', advice: '学会倾听和授权' },
+        { name: '战略总监', match: 92, logic: '制定企业长期发展战略', threshold: '名校MBA，战略思维', advice: '积累不同行业经验' },
+        { name: '管理咨询顾问', match: 89, logic: '为企业提供战略建议', threshold: '名校背景，分析能力', advice: '积累行业案例' },
+        { name: '投资总监', match: 86, logic: '制定投资策略，管理投资组合', threshold: 'CFA，投资经验', advice: '建立行业人脉' },
+        { name: '创业公司创始人', match: 84, logic: '从零开始建立事业', threshold: '综合能力，抗压能力', advice: '找互补的合伙人' },
+        { name: '部门负责人', match: 81, logic: '带领团队达成业绩目标', threshold: '5年+管理经验', advice: '提升领导力' },
+        { name: '销售总监', match: 78, logic: '制定销售策略，推动执行', threshold: '销售经验+管理能力', advice: '用数据驱动决策' },
+        { name: '运营总监', match: 75, logic: '优化运营效率和流程', threshold: '运营经验，管理能力', advice: '关注ROI' },
+        { name: '项目总监', match: 72, logic: '管理多个重大项目', threshold: 'PMP，管理经验', advice: '培养战略思维' },
+        { name: '合伙人', match: 69, logic: '参与企业核心决策', threshold: '专业能力+商业头脑', advice: '积累行业资源' },
+      ],
+      expertQuote: '你的领导力是难得的天赋，但别忘了领导是服务团队。ENTJ 8w3 需要学会的是：真正的领导者不是发号施令，而是激发团队的潜力。',
+      salary: { entry: '20-35K', mid: '50-100K', senior: '100-200K' },
+    },
+
+    // ISTP RIC 5w4 - 冷静分析者
+    'ISTP-RIC-5w4': {
+      personaTitle: '冷静的技术专家',
+      coreAdvantages: [
+        { title: '逻辑分析', desc: '善于拆解复杂问题' },
+        { title: '动手能力强', desc: '喜欢实际操作和实践' },
+        { title: '危机冷静', desc: '在压力下保持理性' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 78 },
+        { name: '逻辑推演', score: 94 },
+        { name: '抗压韧性', score: 88 },
+        { name: '落地执行', score: 85 },
+        { name: '影响力', score: 62 },
+        { name: '情绪资本', score: 65 },
+      ],
+      riskBlackhole: 'ISTP 5w4 的致命短板：过于独立+沟通不足。你可能因为不够表达而被人误解，情感疏离可能影响人际关系。',
+      riskWorkplace: '以下环境会让你痛苦：过度社交+政治斗争+需要频繁沟通+缺乏技术深度。你需要专注的空间，办公室政治会让你想逃离。',
+      previewJobs: [
+        { name: '软件工程师', match: 93, logic: '专注技术，解决复杂问题', threshold: '编程能力，逻辑思维', advice: '持续学习新技术' },
+        { name: '数据工程师', match: 90, logic: '构建和维护数据系统', threshold: 'SQL/ETL经验，编程能力', advice: '掌握大数据技术' },
+      ],
+      fullJobs: [
+        { name: '软件工程师', match: 93, logic: '专注技术，解决复杂问题', threshold: '编程能力，逻辑思维', advice: '持续学习新技术' },
+        { name: '数据工程师', match: 90, logic: '构建和维护数据系统', threshold: 'SQL/ETL经验，编程能力', advice: '掌握大数据技术' },
+        { name: '系统管理员', match: 87, logic: '维护系统稳定运行', threshold: '系统知识，问题解决', advice: '考取相关认证' },
+        { name: '网络安全专家', match: 85, logic: '保护系统安全', threshold: '安全知识，技术能力', advice: '关注安全趋势' },
+        { name: '测试工程师', match: 82, logic: '发现和定位问题', threshold: '技术能力，细心', advice: '学习自动化测试' },
+        { name: '技术支持工程师', match: 79, logic: '解决技术问题', threshold: '技术知识，沟通能力', advice: '提升服务意识' },
+        { name: '运维工程师', match: 76, logic: '确保系统稳定运行', threshold: '系统知识，应急能力', advice: '掌握监控工具' },
+        { name: '质量工程师', match: 73, logic: '保证产品质量', threshold: '质量知识，技术能力', advice: '学习质量管理方法' },
+        { name: '硬件工程师', match: 70, logic: '设计和维护硬件系统', threshold: '电子知识，动手能力', advice: '关注新技术' },
+        { name: '实验室技术员', match: 67, logic: '进行实验和分析', threshold: '实验技能，细心', advice: '掌握标准操作流程' },
+      ],
+      expertQuote: '你的技术能力是宝贵的财富，但别忘了人是技术的使用者。ISTP 5w4 需要学会的是：适当表达你的想法，与他人协作能创造更大价值。',
+      salary: { entry: '15-25K', mid: '30-60K', senior: '60-100K' },
+    },
+
+    // ESFP AIR 7w6 - 热情表演者
+    'ESFP-AIR-7w6': {
+      personaTitle: '活力四射的表演家',
+      coreAdvantages: [
+        { title: '魅力无限', desc: '天生的社交达人，能活跃气氛' },
+        { title: '热爱生活', desc: '对美和艺术有敏锐感知' },
+        { title: '即兴发挥', desc: '善于随机应变，应对突发情况' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 88 },
+        { name: '逻辑推演', score: 65 },
+        { name: '抗压韧性', score: 80 },
+        { name: '落地执行', score: 75 },
+        { name: '影响力', score: 95 },
+        { name: '情绪资本', score: 93 },
+      ],
+      riskBlackhole: 'ESFP 7w6 的致命短板：冲动行事+缺乏规划。你可能因为过于追求当下而忽视长远，容易受情绪影响决策。',
+      riskWorkplace: '以下环境会让你痛苦：长时间独处+重复枯燥+严格规范+缺乏互动。你需要社交和新鲜感，孤独工作会让你枯萎。',
+      previewJobs: [
+        { name: '活动策划', match: 92, logic: '策划有创意的活动方案', threshold: '创意能力，执行力', advice: '建立供应商资源' },
+        { name: '销售代表', match: 89, logic: '用个人魅力打动客户', threshold: '沟通能力，销售技巧', advice: '积累客户资源' },
+      ],
+      fullJobs: [
+        { name: '活动策划', match: 92, logic: '策划有创意的活动方案', threshold: '创意能力，执行力', advice: '建立供应商资源' },
+        { name: '销售代表', match: 89, logic: '用个人魅力打动客户', threshold: '沟通能力，销售技巧', advice: '积累客户资源' },
+        { name: '公关专员', match: 86, logic: '维护媒体和公众关系', threshold: '沟通能力，应变能力', advice: '积累媒体人脉' },
+        { name: '主播/主持人', match: 84, logic: '用个人魅力吸引观众', threshold: '表达能力，个人魅力', advice: '找到自己的风格' },
+        { name: '品牌大使', match: 81, logic: '代表品牌形象', threshold: '形象气质，沟通能力', advice: '真诚对待品牌' },
+        { name: '培训师', match: 78, logic: '用生动方式传授知识', threshold: '专业知识，演讲能力', advice: '提升互动技巧' },
+        { name: '客户经理', match: 75, logic: '维护客户关系', threshold: '服务意识，沟通能力', advice: '建立信任关系' },
+        { name: '婚礼策划师', match: 72, logic: '策划浪漫婚礼', threshold: '创意能力，执行能力', advice: '建立供应商资源' },
+        { name: '旅游顾问', match: 69, logic: '为客人规划旅行', threshold: '服务意识，地理知识', advice: '积累旅行资源' },
+        { name: '社群运营', match: 66, logic: '活跃社群氛围', threshold: '沟通能力，活动策划', advice: '真诚对待成员' },
+      ],
+      expertQuote: '你的热情和魅力是天赋，但需要理性来引导。ESFP 7w6 需要学会的是：冲动不是自由，理性规划才能让热情持久绽放。',
+      salary: { entry: '10-20K', mid: '25-50K', senior: '50-100K' },
+    },
+
+    // ISFP AIR 4w3 - 艺术创作者
+    'ISFP-AIR-4w3': {
+      personaTitle: '敏感的艺术家',
+      coreAdvantages: [
+        { title: '审美天赋', desc: '对美有敏锐感知和独特表达' },
+        { title: '情感丰富', desc: '内心世界细腻，情感表达能力强' },
+        { title: '灵活变通', desc: '善于适应变化，不喜欢约束' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 92 },
+        { name: '逻辑推演', score: 62 },
+        { name: '抗压韧性', score: 70 },
+        { name: '落地执行', score: 73 },
+        { name: '影响力', score: 78 },
+        { name: '情绪资本', score: 90 },
+      ],
+      riskBlackhole: 'ISFP 4w3 的致命短板：过于敏感+缺乏规划。你可能因为情绪波动影响工作，容易因为自我怀疑而放弃。',
+      riskWorkplace: '以下环境会让你痛苦：高压竞争+严格规范+缺乏创意+人际复杂。你需要创作空间和自由，传统办公室会让你窒息。',
+      previewJobs: [
+        { name: 'UI/UX设计师', match: 91, logic: '用审美创造优秀设计', threshold: '设计能力，审美能力', advice: '建立作品集' },
+        { name: '插画师', match: 88, logic: '用绘画表达内心世界', threshold: '绘画技能，创意能力', advice: '形成个人风格' },
+      ],
+      fullJobs: [
+        { name: 'UI/UX设计师', match: 91, logic: '用审美创造优秀设计', threshold: '设计能力，审美能力', advice: '建立作品集' },
+        { name: '插画师', match: 88, logic: '用绘画表达内心世界', threshold: '绘画技能，创意能力', advice: '形成个人风格' },
+        { name: '平面设计师', match: 85, logic: '创作视觉设计作品', threshold: '设计软件，审美能力', advice: '关注设计趋势' },
+        { name: '摄影师', match: 82, logic: '用镜头捕捉美好瞬间', threshold: '摄影技术，审美能力', advice: '建立个人风格' },
+        { name: '视频剪辑师', match: 79, logic: '剪辑有感染力的视频', threshold: '剪辑技能，创意能力', advice: '关注视频趋势' },
+        { name: '内容创作者', match: 76, logic: '用独特视角创作内容', threshold: '创作能力，个人魅力', advice: '持续输出' },
+        { name: '美术老师', match: 73, logic: '教授美术知识', threshold: '美术功底，教学能力', advice: '培养教学风格' },
+        { name: '艺术治疗师', match: 70, logic: '用艺术帮助他人', threshold: '艺术能力，心理学', advice: '考取相关资格证' },
+        { name: '陈设设计师', match: 67, logic: '设计空间陈设', threshold: '设计能力，审美能力', advice: '积累供应商资源' },
+      ],
+      expertQuote: '你的艺术天赋是珍贵的礼物，但需要执行力来变现。ISFP 4w3 需要学会的是：灵感需要落地才能成为作品，坚持比天赋更重要。',
+      salary: { entry: '10-18K', mid: '20-40K', senior: '40-80K' },
+    },
+
+    // ESTP RCI 7w8 - 冒险企业家
+    'ESTP-RCI-7w8': {
+      personaTitle: '大胆的冒险家',
+      coreAdvantages: [
+        { title: '行动力强', desc: '想到就做，不拖延' },
+        { title: '应变能力', desc: '善于应对突发情况' },
+        { title: '商业嗅觉', desc: '能发现赚钱机会' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 85 },
+        { name: '逻辑推演', score: 78 },
+        { name: '抗压韧性', score: 90 },
+        { name: '落地执行', score: 92 },
+        { name: '影响力', score: 85 },
+        { name: '情绪资本', score: 72 },
+      ],
+      riskBlackhole: 'ESTP 7w8 的致命短板：冲动冒险+缺乏规划。你可能因为追求刺激而忽视风险，容易因为急功近利而做出错误决策。',
+      riskWorkplace: '以下环境会让你痛苦：按部就班+需要长期规划+缺乏挑战+过于规范。你需要冒险和刺激，稳定工作会让你厌烦。',
+      previewJobs: [
+        { name: '销售总监', match: 91, logic: '用冒险精神开拓市场', threshold: '销售经验，领导力', advice: '用数据驱动决策' },
+        { name: '创业公司创始人', match: 88, logic: '敢于冒险创业', threshold: '综合能力，抗压能力', advice: '找互补合伙人' },
+      ],
+      fullJobs: [
+        { name: '销售总监', match: 91, logic: '用冒险精神开拓市场', threshold: '销售经验，领导力', advice: '用数据驱动决策' },
+        { name: '创业公司创始人', match: 88, logic: '敢于冒险创业', threshold: '综合能力，抗压能力', advice: '找互补合伙人' },
+        { name: '投资顾问', match: 85, logic: '发现投资机会', threshold: '财务知识，风险意识', advice: '积累投资经验' },
+        { name: '房地产经纪人', match: 82, logic: '促成房产交易', threshold: '销售能力，人脉资源', advice: '建立客户资源' },
+        { name: '企业销售', match: 79, logic: '开发大客户', threshold: '销售能力，沟通能力', advice: '积累行业知识' },
+        { name: '活动执行', match: 76, logic: '现场执行活动', threshold: '应变能力，执行力', advice: '建立供应商资源' },
+        { name: '保险经纪人', match: 73, logic: '销售保险产品', threshold: '销售能力，产品知识', advice: '积累客户资源' },
+        { name: '贸易商', match: 70, logic: '从事商品贸易', threshold: '商业头脑，风险意识', advice: '了解市场动态' },
+        { name: '体育教练', match: 67, logic: '指导运动员训练', threshold: '专业知识，领导力', advice: '考取教练资格证' },
+        { name: '现场管理', match: 64, logic: '管理现场运营', threshold: '应变能力，执行力', advice: '积累现场经验' },
+      ],
+      expertQuote: '你的行动力是难得的天赋，但需要思考来引导。ESTP 7w8 需要学会的是：冒险不等于盲目，风险评估比冲动更重要。',
+      salary: { entry: '12-25K', mid: '30-70K', senior: '70-150K' },
+    },
+
+    // INTP IRA 5w6 - 逻辑思想家
+    'INTP-IRA-5w6': {
+      personaTitle: '深邃的思考者',
+      coreAdvantages: [
+        { title: '逻辑严密', desc: '擅长复杂分析和推理' },
+        { title: '创新思维', desc: '能提出突破性的想法' },
+        { title: '独立思考', desc: '不盲从，有自己的见解' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 94 },
+        { name: '逻辑推演', score: 96 },
+        { name: '抗压韧性', score: 68 },
+        { name: '落地执行', score: 70 },
+        { name: '影响力', score: 65 },
+        { name: '情绪资本', score: 58 },
+      ],
+      riskBlackhole: 'INTP 5w6 的致命短板：过度分析+行动力不足。你可能陷入分析瘫痪，想法很多但缺乏执行。',
+      riskWorkplace: '以下环境会让你痛苦：频繁社交+政治斗争+重复执行+时间紧迫。你需要思考空间，高压快节奏会让你焦虑。',
+      previewJobs: [
+        { name: '算法工程师', match: 94, logic: '解决复杂算法问题', threshold: '计算机背景，数学基础', advice: '持续学习新技术' },
+        { name: '数据科学家', match: 91, logic: '从数据中发现规律', threshold: '统计学/数学，编程能力', advice: '业务理解很重要' },
+      ],
+      fullJobs: [
+        { name: '算法工程师', match: 94, logic: '解决复杂算法问题', threshold: '计算机背景，数学基础', advice: '持续学习新技术' },
+        { name: '数据科学家', match: 91, logic: '从数据中发现规律', threshold: '统计学/数学，编程能力', advice: '业务理解很重要' },
+        { name: '研究员', match: 88, logic: '进行深入研究', threshold: '研究能力，学术背景', advice: '发表论文积累影响力' },
+        { name: '系统架构师', match: 85, logic: '设计系统架构', threshold: '技术广度，架构思维', advice: '学习开源项目' },
+        { name: '软件工程师', match: 82, logic: '开发软件产品', threshold: '编程能力，逻辑思维', advice: '关注代码质量' },
+        { name: '金融分析师', match: 79, logic: '分析金融数据', threshold: '财务知识，分析能力', advice: '考取CFA' },
+        { name: '技术作家', match: 76, logic: '撰写技术文档', threshold: '技术能力，写作能力', advice: '建立个人风格' },
+        { name: '产品策略师', match: 73, logic: '制定产品策略', threshold: '分析能力，战略思维', advice: '关注行业趋势' },
+        { name: '实验室研究员', match: 70, logic: '进行实验研究', threshold: '实验技能，耐心', advice: '发表论文' },
+        { name: '知识管理专员', match: 67, logic: '整理和组织知识', threshold: '信息管理能力', advice: '使用专业工具' },
+      ],
+      expertQuote: '你的思维能力是珍贵的礼物，但需要行动来创造价值。INTP 5w6 需要学会的是：完美的想法不如不完美的执行，把想法变成现实更重要。',
+      salary: { entry: '15-25K', mid: '30-60K', senior: '60-120K' },
+    },
+
+    // ENFJ ESA 2w1 - 魅力领导者
+    'ENFJ-ESA-2w1': {
+      personaTitle: '充满魅力的领导者',
+      coreAdvantages: [
+        { title: '感染力强', desc: '能激励和带动他人' },
+        { title: '共情能力', desc: '理解他人需求和情感' },
+        { title: '组织协调', desc: '善于组织人力达成目标' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 78 },
+        { name: '逻辑推演', score: 72 },
+        { name: '抗压韧性', score: 85 },
+        { name: '落地执行', score: 83 },
+        { name: '影响力', score: 96 },
+        { name: '情绪资本', score: 94 },
+      ],
+      riskBlackhole: 'ENFJ 2w1 的致命短板：过度关心他人+忽视自己。你可能为了帮助他人而耗尽自己，难以拒绝不合理的请求。',
+      riskWorkplace: '以下环境会让你痛苦：利益至上+人际冷漠+缺乏意义+孤立无交流。你需要人文关怀和团队氛围，纯商业环境会让你疲惫。',
+      previewJobs: [
+        { name: '人力资源总监', match: 93, logic: '打造有温度的企业文化', threshold: 'HR经验，领导力', advice: '提升战略思维' },
+        { name: '培训总监', match: 90, logic: '设计和实施培训体系', threshold: '培训经验，演讲能力', advice: '关注培训效果' },
+      ],
+      fullJobs: [
+        { name: '人力资源总监', match: 93, logic: '打造有温度的企业文化', threshold: 'HR经验，领导力', advice: '提升战略思维' },
+        { name: '培训总监', match: 90, logic: '设计和实施培训体系', threshold: '培训经验，演讲能力', advice: '关注培训效果' },
+        { name: '团队负责人', match: 87, logic: '带领团队达成目标', threshold: '管理能力，沟通能力', advice: '学会授权' },
+        { name: '教育机构校长', match: 84, logic: '管理教育机构', threshold: '教育背景，管理能力', advice: '关注教育质量' },
+        { name: '公关总监', match: 81, logic: '维护公共关系', threshold: '公关经验，媒体资源', advice: '建立媒体人脉' },
+        { name: '客户成功总监', match: 78, logic: '确保客户成功', threshold: '服务意识，管理能力', advice: '用数据说话' },
+        { name: '销售经理', match: 75, logic: '带领销售团队', threshold: '销售经验，领导力', advice: '用激励而非命令' },
+        { name: '市场经理', match: 72, logic: '制定市场策略', threshold: '营销知识，管理能力', advice: '关注ROI' },
+        { name: '社群运营总监', match: 69, logic: '运营社群生态', threshold: '运营经验，沟通能力', advice: '建立社群文化' },
+        { name: '企业文化建设师', match: 66, logic: '建设企业文化', threshold: 'HR背景，文化敏感度', advice: '了解企业文化案例' },
+      ],
+      expertQuote: '你的魅力和感染力是天赋，但别忘了也要照顾好自己。ENFJ 2w1 需要学会的是：你不是救世主，设立边界才能更可持续地帮助他人。',
+      salary: { entry: '15-25K', mid: '35-60K', senior: '60-100K' },
+    },
+
+    // INTJ RIA 5w6 - 战略规划师
+    'INTJ-RIA-5w6': {
+      personaTitle: '深谋远虑的战略家',
+      coreAdvantages: [
+        { title: '战略思维', desc: '能制定长期规划和战略' },
+        { title: '系统分析', desc: '善于分析复杂系统' },
+        { title: '独立判断', desc: '不受他人影响，坚持自己的判断' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 93 },
+        { name: '逻辑推演', score: 97 },
+        { name: '抗压韧性', score: 80 },
+        { name: '落地执行', score: 82 },
+        { name: '影响力', score: 70 },
+        { name: '情绪资本', score: 56 },
+      ],
+      riskBlackhole: 'INTJ 5w6 的致命短板：过度分析+人际疏离。你可能因为追求完美而错过机会，孤独感可能影响判断。',
+      riskWorkplace: '以下环境会让你痛苦：需要频繁社交+政治斗争+重复执行+缺乏自主权。你需要深度思考空间，官僚体系会让你窒息。',
+      previewJobs: [
+        { name: '首席技术官', match: 92, logic: '规划技术发展方向', threshold: '10年+技术经验，战略思维', advice: '提升商业理解' },
+        { name: '战略咨询顾问', match: 89, logic: '制定企业发展战略', threshold: '名校MBA，战略思维', advice: '积累行业案例' },
+      ],
+      fullJobs: [
+        { name: '首席技术官', match: 92, logic: '规划技术发展方向', threshold: '10年+技术经验，战略思维', advice: '提升商业理解' },
+        { name: '战略咨询顾问', match: 89, logic: '制定企业发展战略', threshold: '名校MBA，战略思维', advice: '积累行业案例' },
+        { name: '系统架构师', match: 86, logic: '设计系统架构', threshold: '技术广度，架构能力', advice: '学习开源项目' },
+        { name: '产品战略师', match: 83, logic: '制定产品战略', threshold: '产品思维，战略思维', advice: '关注行业趋势' },
+        { name: '数据科学家', match: 80, logic: '分析数据发现洞察', threshold: '统计学/数学，编程能力', advice: '业务理解很重要' },
+        { name: '研究科学家', match: 77, logic: '进行前沿研究', threshold: '博士学历，研究能力', advice: '发表论文' },
+        { name: '投资分析师', match: 74, logic: '分析投资机会', threshold: '财务知识，分析能力', advice: '考取CFA' },
+        { name: '技术顾问', match: 71, logic: '提供技术咨询', threshold: '技术背景，沟通能力', advice: '积累行业经验' },
+        { name: '商业分析师', match: 68, logic: '分析商业模式', threshold: '商业敏感度，分析能力', advice: '关注行业动态' },
+      ],
+      expertQuote: '你的战略思维是珍贵的天赋，但需要执行力来变现。INTJ 5w6 需要学会的是：不完美的执行胜过完美的构想，他人的意见也值得倾听。',
+      salary: { entry: '18-30K', mid: '40-80K', senior: '80-150K' },
+    },
+
+    // ENFP AIS 9w8 - 灵感启发者
+    'ENFP-AIS-9w8': {
+      personaTitle: '热情的启发者',
+      coreAdvantages: [
+        { title: '灵感无限', desc: '总能激发他人创造力' },
+        { title: '沟通魅力', desc: '天生的演讲者和沟通者' },
+        { title: '乐观积极', desc: '能看到事情积极的一面' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 95 },
+        { name: '逻辑推演', score: 70 },
+        { name: '抗压韧性', score: 80 },
+        { name: '落地执行', score: 72 },
+        { name: '影响力', score: 93 },
+        { name: '情绪资本', score: 91 },
+      ],
+      riskBlackhole: 'ENFP 9w8 的致命短板：三分钟热度+缺乏深度。你可能同时开始太多项目而无法完成，容易因为追求新鲜感而浅尝辄止。',
+      riskWorkplace: '以下环境会让你痛苦：重复枯燥+严格规范+缺乏创意+孤立无交流。你需要自由和新鲜感，传统层级制会让你窒息。',
+      previewJobs: [
+        { name: '创意总监', match: 91, logic: '领导创意团队', threshold: '创意能力+管理能力', advice: '学会平衡创意和商业' },
+        { name: '内容营销总监', match: 88, logic: '制定内容策略', threshold: '内容经验，战略思维', advice: '关注内容ROI' },
+      ],
+      fullJobs: [
+        { name: '创意总监', match: 91, logic: '领导创意团队', threshold: '创意能力+管理能力', advice: '学会平衡创意和商业' },
+        { name: '内容营销总监', match: 88, logic: '制定内容策略', threshold: '内容经验，战略思维', advice: '关注内容ROI' },
+        { name: '品牌策划', match: 85, logic: '策划品牌活动', threshold: '品牌知识，创意能力', advice: '建立个人风格' },
+        { name: '市场营销经理', match: 82, logic: '策划营销活动', threshold: '营销知识，项目管理', advice: '关注成功案例' },
+        { name: '活动策划', match: 79, logic: '策划创意活动', threshold: '创意能力，执行力', advice: '建立供应商资源' },
+        { name: '社群运营', match: 76, logic: '运营活跃社群', threshold: '沟通能力，活动策划', advice: '真诚对待成员' },
+        { name: '产品运营', match: 73, logic: '运营产品提升活跃', threshold: '用户思维，数据分析', advice: '关注用户反馈' },
+        { name: '公关专员', match: 70, logic: '维护媒体关系', threshold: '沟通能力，应变能力', advice: '积累媒体人脉' },
+        { name: '内容创作者', match: 67, logic: '创作有感染力内容', threshold: '创作能力，个人魅力', advice: '持续输出' },
+        { name: '新媒体运营', match: 64, logic: '运营新媒体账号', threshold: '内容能力，平台理解', advice: '每个平台有特点' },
+      ],
+      expertQuote: '你的热情和创意是天赋，但需要专注来兑现价值。ENFP 9w8 需要学会的是：少开几个项目，把每个做透做深，专注比广度更重要。',
+      salary: { entry: '12-22K', mid: '25-50K', senior: '50-100K' },
+    },
+
+    // ISTJ CEI 1w9 - 稳健执行者
+    'ISTJ-CEI-1w9': {
+      personaTitle: '可信赖的执行者',
+      coreAdvantages: [
+        { title: '一丝不苟', desc: '对质量有极高要求' },
+        { title: '可靠稳定', desc: '说到做到，值得信赖' },
+        { title: '流程化', desc: '善于建立和遵循流程' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 62 },
+        { name: '逻辑推演', score: 90 },
+        { name: '抗压韧性', score: 92 },
+        { name: '落地执行', score: 98 },
+        { name: '影响力', score: 65 },
+        { name: '情绪资本', score: 70 },
+      ],
+      riskBlackhole: 'ISTJ 1w9 的致命短板：过于保守+完美主义。你可能因为追求完美而效率低下，对变化的抵触可能限制发展。',
+      riskWorkplace: '以下环境会让你痛苦：快速变化+规则不明确+需要即兴发挥+过度强调社交。你需要清晰目标和流程，混乱创业公司可能让你焦虑。',
+      previewJobs: [
+        { name: '质量管理', match: 94, logic: '确保产品质量', threshold: '质量知识，细心', advice: '学习质量管理方法' },
+        { name: '财务经理', match: 91, logic: '管理财务工作', threshold: 'CPA/CFA，管理经验', advice: '提升管理能力' },
+      ],
+      fullJobs: [
+        { name: '质量管理', match: 94, logic: '确保产品质量', threshold: '质量知识，细心', advice: '学习质量管理方法' },
+        { name: '财务经理', match: 91, logic: '管理财务工作', threshold: 'CPA/CFA，管理经验', advice: '提升管理能力' },
+        { name: '审计师', match: 88, logic: '检查合规性', threshold: '会计/审计背景，CPA', advice: '四大经验很好' },
+        { name: '合规专员', match: 85, logic: '确保合规运营', threshold: '法律/财务背景，细心', advice: '持续学习法规' },
+        { name: '成本控制', match: 82, logic: '控制运营成本', threshold: '财务知识，分析能力', advice: '关注细节' },
+        { name: '数据库管理', match: 79, logic: '维护数据库稳定', threshold: '数据库技术，责任心', advice: '掌握主流系统' },
+        { name: 'IT运维', match: 76, logic: '维护系统稳定', threshold: '系统知识，应急能力', advice: '掌握监控工具' },
+        { name: '档案管理', match: 73, logic: '管理档案资料', threshold: '细心耐心，组织能力', advice: '学习档案管理' },
+        { name: '库存管理', match: 70, logic: '管理库存物资', threshold: '细心，组织能力', advice: '使用管理系统' },
+        { name: '标准制定', match: 67, logic: '制定工作标准', threshold: '专业知识，细心', advice: '了解行业标准' },
+      ],
+      expertQuote: '你的可靠是团队财富，但别让保守成为枷锁。ISTJ 1w9 需要学会的是：完美不是目标，适当的风险是成长的必经之路。',
+      salary: { entry: '12-20K', mid: '25-45K', senior: '45-80K' },
+    },
+
+    // ESFP AIR 3w2 - 活力沟通者
+    'ESFP-AIR-3w2': {
+      personaTitle: '阳光的沟通家',
+      coreAdvantages: [
+        { title: '热情开朗', desc: '天生的开心果，能带动气氛' },
+        { title: '人际网络', desc: '善于建立和维护人际关系' },
+        { title: '表现力强', desc: '善于表达和展示自己' },
+      ],
+      careerRadar: [
+        { name: '创新力', score: 82 },
+        { name: '逻辑推演', score: 64 },
+        { name: '抗压韧性', score: 82 },
+        { name: '落地执行', score: 76 },
+        { name: '影响力', score: 94 },
+        { name: '情绪资本', score: 95 },
+      ],
+      riskBlackhole: 'ESFP 3w2 的致命短板：追求认可+缺乏规划。你可能为了获得认可而过度表现，容易因为追求当下而忽视长远。',
+      riskWorkplace: '以下环境会让你痛苦：长时间独处+重复枯燥+严格规范+缺乏互动。你需要社交和认可，孤独工作会让你枯萎。',
+      previewJobs: [
+        { name: '销售经理', match: 91, logic: '用热情带领销售团队', threshold: '销售经验，领导力', advice: '用数据说话' },
+        { name: '公关经理', match: 88, logic: '维护公共关系', threshold: '公关经验，媒体资源', advice: '建立媒体人脉' },
+      ],
+      fullJobs: [
+        { name: '销售经理', match: 91, logic: '用热情带领销售团队', threshold: '销售经验，领导力', advice: '用数据说话' },
+        { name: '公关经理', match: 88, logic: '维护公共关系', threshold: '公关经验，媒体资源', advice: '建立媒体人脉' },
+        { name: '活动策划', match: 85, logic: '策划精彩活动', threshold: '创意能力，执行力', advice: '建立供应商资源' },
+        { name: '客户经理', match: 82, logic: '维护客户关系', threshold: '服务意识，沟通能力', advice: '建立信任关系' },
+        { name: '品牌大使', match: 79, logic: '代表品牌形象', threshold: '形象气质，沟通能力', advice: '真诚对待品牌' },
+        { name: '主持人', match: 76, logic: '主持各类活动', threshold: '表达能力，应变能力', advice: '找到个人风格' },
+        { name: '培训师', match: 73, logic: '用生动方式授课', threshold: '专业知识，演讲能力', advice: '提升互动技巧' },
+        { name: '社群运营', match: 70, logic: '活跃社群氛围', threshold: '沟通能力，活动策划', advice: '真诚对待成员' },
+        { name: '旅游顾问', match: 67, logic: '为客户规划旅行', threshold: '服务意识，地理知识', advice: '积累旅行资源' },
+        { name: '婚庆策划', match: 64, logic: '策划浪漫婚礼', threshold: '创意能力，执行能力', advice: '建立供应商资源' },
+      ],
+      expertQuote: '你的热情和魅力是天赋，但需要深度来持久。ESFP 3w2 需要学会的是：真正的认可来自专业和价值，而非表面的表现。',
+      salary: { entry: '10-20K', mid: '25-50K', senior: '50-100K' },
+    },
   };
 
   // 默认配置（用于未预定义的组合）
@@ -285,6 +953,13 @@ export default function Home() {
   const [blacklist, setBlacklist] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [history, setHistory] = useState<TestHistory[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // 加载历史记录
+  useEffect(() => {
+    setHistory(getHistory());
+  }, []);
 
   useEffect(() => {
     if (view === 'loading') {
@@ -299,8 +974,31 @@ export default function Home() {
     if (!mbti || !holland || !enneagram) return;
     setView('loading');
     setTimeout(() => {
+      // 保存到历史记录
+      const profile = getPersonalityProfile(mbti, holland, enneagram);
+      saveToHistory(mbti, holland, enneagram, profile.personaTitle);
+      setHistory(getHistory());
       setView('result');
     }, 3000);
+  };
+
+  const handleHistoryClick = (record: TestHistory) => {
+    setMbti(record.mbti);
+    setHolland(record.holland);
+    setEnneagram(record.enneagram);
+    setIndustry('');
+    setBlacklist('');
+    setIsUnlocked(false);
+    setShowHistory(false);
+    setView('loading');
+    setTimeout(() => {
+      setView('result');
+    }, 3000);
+  };
+
+  const handleClearHistory = () => {
+    clearHistory();
+    setHistory([]);
   };
 
   const handleExampleClick = (exampleCase: typeof EXAMPLE_CASES[0]) => {
@@ -312,6 +1010,10 @@ export default function Home() {
     setIsUnlocked(false);
     setView('loading');
     setTimeout(() => {
+      // 保存到历史记录
+      const profile = getPersonalityProfile(exampleCase.mbti, exampleCase.holland, exampleCase.enneagram);
+      saveToHistory(exampleCase.mbti, exampleCase.holland, exampleCase.enneagram, profile.personaTitle);
+      setHistory(getHistory());
       setView('result');
     }, 3000);
   };
@@ -489,6 +1191,54 @@ export default function Home() {
             </a>
           </div>
         </div>
+
+        {/* History Section */}
+        {history.length > 0 && (
+          <div className="w-full max-w-lg mt-6">
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="w-full text-center text-sm text-[#0A1F3D] hover:underline transition-colors"
+            >
+              {showHistory ? '收起' : '查看历史记录'} ({history.length})
+            </button>
+            {showHistory && (
+              <div className="mt-4 bg-white rounded-lg border border-[#E5E5E5] p-4 shadow-sm">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-sm font-semibold text-[#1A1A1A]">测试历史</h4>
+                  <button
+                    onClick={handleClearHistory}
+                    className="text-xs text-[#999999] hover:text-[#0A1F3D] transition-colors"
+                  >
+                    清空
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {history.map((record) => (
+                    <button
+                      key={record.id}
+                      onClick={() => handleHistoryClick(record)}
+                      className="w-full text-left p-3 rounded-lg border border-[#E5E5E5] hover:border-[#0A1F3D] hover:shadow-md transition-all duration-200 group"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#0A1F3D]">
+                            {record.personaTitle}
+                          </p>
+                          <p className="text-xs text-[#666666] mt-1">
+                            {record.mbti} · {record.holland} · {record.enneagram}
+                          </p>
+                        </div>
+                        <svg className="w-4 h-4 text-[#999999] group-hover:text-[#0A1F3D] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
