@@ -1557,12 +1557,12 @@ export default function Home() {
                   display: 'inline-block',
                 }}
               >
-                [ 赛博职场实验室 © 2025 ]
+                [ 赛博职场实验室 © 2026 ]
               </div>
             </div>
 
             {/* 元数据 */}
-            <div className="text-xs" style={{ color: '#333', fontSize: '10px', lineHeight: '1.6' }}>
+            <div className="text-xs" style={{ color: '#333', fontSize: '12px', lineHeight: '1.6' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span>DATE: {dateStr}</span>
                 <span>TIME: {timeStr}</span>
@@ -1598,7 +1598,7 @@ export default function Home() {
               />
               <div
                 style={{
-                  fontSize: '28px',
+                  fontSize: '34px',
                   fontWeight: '900',
                   color: '#1a1a1a',
                   textAlign: 'center',
@@ -1618,8 +1618,8 @@ export default function Home() {
                 style={{
                   backgroundColor: '#1a1a1a',
                   color: '#fff',
-                  padding: '4px 10px',
-                  fontSize: '11px',
+                  padding: '6px 12px',
+                  fontSize: '14px',
                   fontWeight: 'bold',
                 }}
               >
@@ -1629,8 +1629,8 @@ export default function Home() {
                 style={{
                   backgroundColor: '#1a1a1a',
                   color: '#fff',
-                  padding: '4px 10px',
-                  fontSize: '11px',
+                  padding: '6px 12px',
+                  fontSize: '14px',
                   fontWeight: 'bold',
                 }}
               >
@@ -1640,8 +1640,8 @@ export default function Home() {
                 style={{
                   backgroundColor: '#1a1a1a',
                   color: '#fff',
-                  padding: '4px 10px',
-                  fontSize: '11px',
+                  padding: '6px 12px',
+                  fontSize: '14px',
                   fontWeight: 'bold',
                 }}
               >
@@ -1653,7 +1653,7 @@ export default function Home() {
           {/* 区域 C: 灵魂账单 */}
           <div className="mb-4">
             <div style={{ borderTop: '1px dashed #333', marginBottom: '8px' }}></div>
-            <div style={{ fontSize: '11px', color: '#1a1a1a' }}>
+            <div style={{ fontSize: '13px', color: '#1a1a1a' }}>
               {receiptData.items.map((item, index) => (
                 <div
                   key={index}
@@ -1680,7 +1680,7 @@ export default function Home() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   fontWeight: '900',
-                  fontSize: '12px',
+                  fontSize: '15px',
                 }}
               >
                 <span>TOTAL VALUE:</span>
@@ -1695,7 +1695,7 @@ export default function Home() {
             <div style={{ position: 'absolute', top: '-4px', left: '-8px', right: '-8px', bottom: '-4px', border: '1px solid #ff4444', transform: 'rotate(-0.5deg)' }} />
             <div
               style={{
-                fontSize: '11px',
+                fontSize: '13px',
                 color: '#333',
                 fontStyle: 'italic',
                 lineHeight: '1.5',
@@ -1720,10 +1720,10 @@ export default function Home() {
                 marginBottom: '12px',
               }}
             >
-              <div style={{ fontSize: '10px', color: '#00aa55', fontWeight: 'bold', marginBottom: '2px' }}>
+              <div style={{ fontSize: '12px', color: '#00aa55', fontWeight: 'bold', marginBottom: '2px' }}>
                 {receiptData.rarity}
               </div>
-              <div style={{ fontSize: '9px', color: '#666' }}>
+              <div style={{ fontSize: '11px', color: '#666' }}>
                 全网仅 {receiptData.rarityScore}% 的人拥有此配置
               </div>
             </div>
@@ -1733,9 +1733,9 @@ export default function Home() {
               style={{
                 backgroundColor: receiptData.socialTag.type === 'warning' ? '#ff4444' : '#1a1a1a',
                 color: '#fff',
-                padding: '6px',
+                padding: '8px',
                 textAlign: 'center',
-                fontSize: '10px',
+                fontSize: '12px',
                 marginBottom: '12px',
                 fontWeight: 'bold',
               }}
