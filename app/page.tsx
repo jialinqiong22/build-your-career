@@ -19,6 +19,50 @@ const LOADING_MESSAGES = [
   '正在预测职场雷区...',
 ];
 
+// 4 个示例案例
+const EXAMPLE_CASES = [
+  {
+    id: 1,
+    title: '温暖的社交达人',
+    mbti: 'ESFJ',
+    holland: 'ESC',
+    enneagram: '6w7',
+    description: '外向、社交型，擅长人际协调',
+    jobs: ['人力资源经理', '客户成功经理', '活动策划', '社群运营'],
+    salary: { entry: '10-18K', mid: '20-35K', senior: '35-60K' },
+  },
+  {
+    id: 2,
+    title: '战略规划专家',
+    mbti: 'INTJ',
+    holland: 'RIA',
+    enneagram: '1w4',
+    description: '理性、完美主义，追求系统化解决方案',
+    jobs: ['产品设计师', 'UX 研究员', '数据分析师', '系统架构师'],
+    salary: { entry: '15-25K', mid: '30-50K', senior: '50-90K' },
+  },
+  {
+    id: 3,
+    title: '稳健执行专家',
+    mbti: 'ISTJ',
+    holland: 'CEI',
+    enneagram: '5w6',
+    description: '细致、可靠，擅长规范化流程管理',
+    jobs: ['财务分析师', '合规专员', '项目经理', '数据工程师'],
+    salary: { entry: '12-20K', mid: '25-45K', senior: '40-70K' },
+  },
+  {
+    id: 4,
+    title: '创意创新先锋',
+    mbti: 'ENFP',
+    holland: 'AIS',
+    enneagram: '7w8',
+    description: '热情、创新，擅长激发团队灵感',
+    jobs: ['品牌策划', '内容营销', '产品运营', '用户体验设计师'],
+    salary: { entry: '12-22K', mid: '25-45K', senior: '45-80K' },
+  },
+];
+
 export default function Home() {
   const [view, setView] = useState<ViewState>('input');
   const [loadingIndex, setLoadingIndex] = useState(0);
@@ -41,6 +85,19 @@ export default function Home() {
 
   const handleGenerate = () => {
     if (!mbti || !holland || !enneagram) return;
+    setView('loading');
+    setTimeout(() => {
+      setView('result');
+    }, 3000);
+  };
+
+  const handleExampleClick = (exampleCase: typeof EXAMPLE_CASES[0]) => {
+    setMbti(exampleCase.mbti);
+    setHolland(exampleCase.holland);
+    setEnneagram(exampleCase.enneagram);
+    setIndustry('');
+    setBlacklist('');
+    setIsUnlocked(false);
     setView('loading');
     setTimeout(() => {
       setView('result');
@@ -152,6 +209,44 @@ export default function Home() {
           >
             生成分析报告
           </button>
+        </div>
+
+        {/* Example Cases */}
+        <div className="w-full max-w-lg mt-10">
+          <h3 className="text-center text-sm font-semibold text-[#666666] mb-4">快速体验案例</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {EXAMPLE_CASES.map((example) => (
+              <button
+                key={example.id}
+                onClick={() => handleExampleClick(example)}
+                className="bg-white rounded-lg border border-[#E5E5E5] p-4 text-left hover:border-[#0A1F3D] hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-[#0A1F3D] bg-[#F5F5F5] px-2 py-1 rounded">
+                    {example.mbti}
+                  </span>
+                  <svg className="w-4 h-4 text-[#999999] group-hover:text-[#0A1F3D] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h4 className="text-sm font-semibold text-[#1A1A1A] mb-1">{example.title}</h4>
+                <p className="text-xs text-[#666666] mb-2">{example.description}</p>
+                <div className="flex items-center gap-2 text-xs text-[#999999]">
+                  <span>{example.holland}</span>
+                  <span>·</span>
+                  <span>{example.enneagram}</span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-[#F5F5F5]">
+                  <p className="text-xs text-[#0A1F3D]">
+                    推荐: {example.jobs[0]} 等
+                  </p>
+                  <p className="text-xs text-[#999999] mt-1">
+                    薪资: {example.salary.entry} ~ {example.salary.mid}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Footer */}
