@@ -1172,9 +1172,9 @@ export default function Home() {
     }
   };
 
-  // 发送数据到飞书多维表格
+  // 发送消息到飞书群机器人
   const sendToFeishu = async (data: any) => {
-    // 飞书 Webhook URL - 请替换为你的实际 URL
+    // 飞书群机器人 Webhook URL - 请替换为你的实际 URL
     const FEISHU_WEBHOOK_URL = process.env.NEXT_PUBLIC_FEISHU_WEBHOOK_URL || 'YOUR_WEBHOOK_URL_HERE';
 
     if (FEISHU_WEBHOOK_URL === 'YOUR_WEBHOOK_URL_HERE') {
@@ -1184,6 +1184,13 @@ export default function Home() {
 
     // 获取用户人格画像
     const profile = getPersonalityProfile(data.mbti, data.holland, data.enneagram);
+    const rarity = calculateRarity(data.mbti, data.holland, data.enneagram);
+
+    // 格式化问题列表
+    const problemLabels = data.problems.map((id: string) => {
+      const option = PROBLEM_OPTIONS.find(o => o.id === id);
+      return option ? option.label : id;
+    });
 
     // 构建飞书消息卡片
     const feishuMessage = {
@@ -1206,7 +1213,7 @@ export default function Home() {
                 `• **霍兰德**: ${data.holland}\n` +
                 `• **九型人格**: ${data.enneagram}\n` +
                 `• **人格类型**: ${profile.personaTitle}\n` +
-                `• **稀有度**: ${calculateRarity(data.mbti, data.holland, data.enneagram).label}`
+                `• **稀有度**: ${rarity.label}`
             }
           },
           {
@@ -1217,10 +1224,7 @@ export default function Home() {
             text: {
               tag: 'lark_md',
               content: '**📋 遇到的问题**\n' +
-                data.problems.map((id: string) => {
-                  const option = PROBLEM_OPTIONS.find(o => o.id === id);
-                  return `• ${option?.label || id}`;
-                }).join('\n')
+                problemLabels.map((label: string) => `• ${label}`).join('\n')
             }
           },
           {
@@ -1231,8 +1235,8 @@ export default function Home() {
             text: {
               tag: 'lark_md',
               content: '**📞 联系方式**\n' +
-                (data.wechatId ? `• **微信**: ${data.wechatId}\n` : '') +
-                (data.email ? `• **邮箱**: ${data.email}\n` : '')
+                (data.wechatId ? `• **微信**: \`${data.wechatId}\`\n` : '') +
+                (data.email ? `• **邮箱**: \`${data.email}\`\n` : '')
             }
           },
           {
@@ -1242,18 +1246,50 @@ export default function Home() {
             tag: 'div',
             text: {
               tag: 'lark_md',
-              content: '**💡 快速建议**\n' +
+              content: '**💡 推荐岗位**\n' +
                 profile.previewJobs?.slice(0, 3).map((job: any) =>
-                  `• ${job.name} (匹配度 ${job.match}%)`
+                  `• **${job.name}** (匹配度 ${job.match}%)`
                 ).join('\n') || '暂无建议'
             }
+          },
+          {
+            tag: 'hr'
           },
           {
             tag: 'div',
             text: {
               tag: 'plain_text',
-              content: `提交时间: ${new Date(data.timestamp).toLocaleString('zh-CN')}`
+              content: `📅 ${new Date(data.timestamp).toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}`
             }
+          },
+          {
+            tag: 'action',
+            actions: [
+              {
+                tag: 'button',
+                text: {
+                  tag: 'plain_text',
+                  content: '复制微信号'
+                },
+                type: 'default',
+                url: data.wechatId ? `feishu://copy_text?text=${encodeURIComponent(data.wechatId)}` : ''
+              },
+              {
+                tag: 'button',
+                text: {
+                  tag: 'plain_text',
+                  content: '复制邮箱'
+                },
+                type: 'default',
+                url: data.email ? `feishu://copy_text?text=${encodeURIComponent(data.email)}` : ''
+              }
+            ].filter((action: any) => action.url)
           }
         ]
       }
@@ -1269,7 +1305,10 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        console.error('飞书发送失败:', await response.text());
+        const errorText = await response.text();
+        console.error('飞书发送失败:', errorText);
+      } else {
+        console.log('飞书消息发送成功');
       }
     } catch (error) {
       console.error('发送到飞书时出错:', error);
