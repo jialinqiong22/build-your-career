@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 
-type ViewState = 'input' | 'loading' | 'result' | 'history';
+type ViewState = 'input' | 'loading' | 'result' | 'history' | 'survey';
 
 // 历史记录类型
 type TestHistory = {
@@ -1069,6 +1069,31 @@ export default function Home() {
   const [shareCardUrl, setShareCardUrl] = useState('');
   const shareCardRef = useRef<HTMLDivElement>(null);
 
+  // 求职问题问卷状态
+  const [selectedProblems, setSelectedProblems] = useState<string[]>([]);
+  const [wechatId, setWechatId] = useState('');
+  const [email, setEmail] = useState('');
+  const [surveySubmitted, setSurveySubmitted] = useState(false);
+
+  // 求职问题选项
+  const PROBLEM_OPTIONS = [
+    { id: 'resume', label: '简历优化：如何突出经历、量化成果' },
+    { id: 'timeline', label: '求职时间线：何时开始准备、申请窗口期' },
+    { id: 'networking', label: 'networking技巧：如何拓展人脉、内推渠道' },
+    { id: 'interview', label: '面试准备：案例面试、行为面试、技术面试' },
+    { id: 'offer', label: 'offer选择：多个offer如何权衡' },
+    { id: 'visa', label: '身份/签证：工作签证、身份限制问题' },
+    { id: 'industry', label: '行业选择：不确定适合哪个方向' },
+    { id: 'skills', label: '技能提升：需要补充哪些硬技能/软技能' },
+    { id: 'company', label: '公司选择：大厂vs小厂、不同公司文化' },
+    { id: 'salary', label: '薪资谈判：如何争取更好待遇' },
+    { id: 'career', label: '职业规划：长期发展路径不清晰' },
+    { id: 'mindset', label: '心态调整：焦虑、挫败感' },
+    { id: 'info', label: '信息差：不了解招聘流程和要求' },
+    { id: 'background', label: '背景提升：实习、项目经历不足' },
+    { id: 'other', label: '其他' },
+  ];
+
   // 加载历史记录
   useEffect(() => {
     setHistory(getHistory());
@@ -1147,30 +1172,40 @@ export default function Home() {
     }
   };
 
-  // 用户反馈处理
-  const handleFeedback = (type: 'helpful' | 'improve' | 'suggestion') => {
-    const feedbackData = {
-      type,
+  // 处理问卷提交
+  const handleSurveySubmit = () => {
+    if (selectedProblems.length === 0) {
+      alert('请至少选择一个问题');
+      return;
+    }
+    if (!wechatId.trim() && !email.trim()) {
+      alert('请填写微信号或邮箱，方便我们联系你');
+      return;
+    }
+
+    const surveyData = {
+      problems: selectedProblems,
+      wechatId,
+      email,
       mbti,
       holland,
       enneagram,
-      personaTitle: getPersonalityProfile(mbti, holland, enneagram).personaTitle,
       timestamp: new Date().toISOString(),
     };
 
-    // 保存到 localStorage（可后续导出分析）
-    const existingFeedback = JSON.parse(localStorage.getItem('career_gps_feedback') || '[]');
-    existingFeedback.push(feedbackData);
-    localStorage.setItem('career_gps_feedback', JSON.stringify(existingFeedback.slice(-100))); // 保留最近 100 条
+    // 保存到 localStorage
+    const existingSurveys = JSON.parse(localStorage.getItem('career_gps_surveys') || '[]');
+    existingSurveys.push(surveyData);
+    localStorage.setItem('career_gps_surveys', JSON.stringify(existingSurveys.slice(-100)));
 
-    // 显示感谢消息
-    const messages = {
-      helpful: '🎉 太好了！很高兴这份报告对你有帮助！',
-      improve: '💪 感谢反馈！我们会持续优化产品体验。',
-      suggestion: '💡 感谢建议！我们会认真考虑你的意见。',
-    };
-
-    alert(messages[type]);
+    alert('提交成功！我们会尽快联系你，为你提供专业建议。');
+    setSurveySubmitted(true);
+    setView('input');
+    // 重置表单
+    setSelectedProblems([]);
+    setWechatId('');
+    setEmail('');
+    setSurveySubmitted(false);
   };
 
   // 分享卡片组件
@@ -1783,45 +1818,154 @@ export default function Home() {
             </div>
           )}
 
-          {/* 用户反馈收集 */}
+          {/* 求职困惑收集 */}
           <div className="mt-8 pt-8 border-t" style={{ borderColor: `${theme.secondary}20` }}>
             <div className="text-center mb-4">
-              <p className="text-sm font-semibold mb-1" style={{ color: theme.text }}>这份报告对你有帮助吗？</p>
-              <p className="text-xs opacity-60" style={{ color: theme.text }}>你的反馈能帮助我们做得更好</p>
+              <p className="text-sm font-semibold mb-1" style={{ color: theme.text }}>遇到求职困惑？</p>
+              <p className="text-xs opacity-60" style={{ color: theme.text }}>告诉我们你遇到的求职问题，我们会为你提供专业建议</p>
             </div>
-            <div className="flex justify-center gap-3 flex-wrap">
-              <button
-                onClick={() => handleFeedback('helpful')}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all hover:scale-105"
-                style={{ backgroundColor: `${theme.accent}20`, color: theme.text, border: `1px solid ${theme.accent}40` }}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894c.777.918 1.616 1.666 2.5 1.666h3.764M15 12h3M9 12h3m-9 4h.01M12 21l9-9M12 3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                有帮助
-              </button>
-              <button
-                onClick={() => handleFeedback('improve')}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all hover:scale-105"
-                style={{ backgroundColor: `${theme.secondary}20`, color: theme.text, border: `1px solid ${theme.secondary}40` }}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.932-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.932 3l13.732 1c.77 1.333 2.693 1.333 3.464 0l4.89-8.485c.77-1.333.192-3-1.932-3z" />
-                </svg>
-                需要改进
-              </button>
-              <button
-                onClick={() => handleFeedback('suggestion')}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all hover:scale-105"
-                style={{ backgroundColor: `${theme.accent}20`, color: theme.text, border: `1px solid ${theme.accent}40` }}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 102-4h-.095-.532-5.192-2.653-.617-5.192a1.922 1.922 0 01-1.664-.987 1.922 1.922 0 01-1.664.987 1.922 1.922 0 01-1.664-.987V3a2 2 0 10-4 0v4.068c0 1.042-1.066 2.056-2.876 2.884a2.754 2.754 0 01-.252 1.015c0 .083.044.16.089.243l.008.01a2.812 2.812 0 001.573 4.786c.014.015.03.03.03.03h.005a2.75 2.75 0 011.573-4.787 2.762 2.762 0 01-.252-1.015c0-.083.044-.16-.089-.243l-.008-.01a2.812 2.812 0 00-1.573-4.786z" />
-                </svg>
-                有建议
-              </button>
+            <button
+              onClick={() => setView('survey')}
+              className="w-full py-3 rounded-lg text-sm font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2"
+              style={{ backgroundColor: theme.accent, color: '#fff' }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              提交你的求职困惑
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSurveyView = () => {
+    const theme = getThemeColors(mbti || 'INTJ');
+
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: `${theme.background}10` }}>
+        {/* Header Bar */}
+        <div className="sticky top-0 z-10 backdrop-blur-sm" style={{ backgroundColor: `${theme.background}95`, borderBottom: `1px solid ${theme.accent}20` }}>
+          <div className="max-w-2xl mx-auto px-5 py-4 flex items-center justify-between">
+            <button
+              onClick={() => setView('result')}
+              className="flex items-center gap-2 transition-all hover:scale-105"
+              style={{ color: theme.text }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              返回结果
+            </button>
+            <h1 className="text-lg font-semibold" style={{ color: theme.text }}>求职困惑收集</h1>
+            <div className="w-20"></div>
+          </div>
+        </div>
+
+        <div className="max-w-2xl mx-auto px-5 py-8">
+          {/* Title */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold mb-2" style={{ color: theme.text }}>告诉我们你的求职困惑</h2>
+            <p className="text-sm opacity-70" style={{ color: theme.text }}>
+              选择你遇到的问题，我们会为你提供专业建议
+            </p>
+          </div>
+
+          {/* Problem Selection */}
+          <div className="mb-8">
+            <p className="text-sm font-semibold mb-4" style={{ color: theme.text }}>
+              你遇到哪些求职问题？<span className="text-red-500">*</span>
+            </p>
+            <div className="grid grid-cols-1 gap-3">
+              {PROBLEM_OPTIONS.map((option) => (
+                <label
+                  key={option.id}
+                  className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition-all ${
+                    selectedProblems.includes(option.id)
+                      ? 'ring-2'
+                      : ''
+                  }`}
+                  style={{
+                    backgroundColor: theme.cardBg,
+                    borderColor: selectedProblems.includes(option.id) ? theme.accent : 'transparent',
+                    borderWidth: selectedProblems.includes(option.id) ? '2px' : '0'
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedProblems.includes(option.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedProblems([...selectedProblems, option.id]);
+                      } else {
+                        setSelectedProblems(selectedProblems.filter(p => p !== option.id));
+                      }
+                    }}
+                    className="w-5 h-5 rounded"
+                    style={{ accentColor: theme.accent }}
+                  />
+                  <span className="text-sm" style={{ color: theme.text }}>{option.label}</span>
+                </label>
+              ))}
             </div>
           </div>
+
+          {/* Contact Information */}
+          <div className="mb-8">
+            <p className="text-sm font-semibold mb-4" style={{ color: theme.text }}>
+              联系方式 <span className="text-xs opacity-60">(至少填写一项)*</span>
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm mb-2 block" style={{ color: theme.text }}>微信号</label>
+                <input
+                  type="text"
+                  value={wechatId}
+                  onChange={(e) => setWechatId(e.target.value)}
+                  placeholder="请输入你的微信号"
+                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: theme.cardBg,
+                    borderColor: `${theme.accent}40`,
+                    color: theme.text,
+                    '--tw-ring-color': theme.accent
+                  } as React.CSSProperties}
+                />
+              </div>
+              <div>
+                <label className="text-sm mb-2 block" style={{ color: theme.text }}>邮箱</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="请输入你的邮箱"
+                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: theme.cardBg,
+                    borderColor: `${theme.accent}40`,
+                    color: theme.text,
+                    '--tw-ring-color': theme.accent
+                  } as React.CSSProperties}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            onClick={handleSurveySubmit}
+            disabled={surveySubmitted}
+            className="w-full py-4 rounded-lg text-white font-semibold text-lg transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: theme.accent }}
+          >
+            {surveySubmitted ? '已提交 ✓' : '提交困惑，获取建议'}
+          </button>
+
+          {/* Info Text */}
+          <p className="text-xs text-center mt-6 opacity-60" style={{ color: theme.text }}>
+            提交后我们会尽快通过微信或邮箱联系你，为你提供专业建议
+          </p>
         </div>
       </div>
     );
@@ -1929,6 +2073,7 @@ export default function Home() {
       {view === 'input' && renderInputView()}
       {view === 'loading' && renderLoadingView()}
       {view === 'result' && renderResultView()}
+      {view === 'survey' && renderSurveyView()}
       {renderModal()}
 
       {/* Hidden ShareCard for screenshot generation */}
