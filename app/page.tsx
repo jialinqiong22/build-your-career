@@ -1147,6 +1147,32 @@ export default function Home() {
     }
   };
 
+  // 用户反馈处理
+  const handleFeedback = (type: 'helpful' | 'improve' | 'suggestion') => {
+    const feedbackData = {
+      type,
+      mbti,
+      holland,
+      enneagram,
+      personaTitle: getPersonalityProfile(mbti, holland, enneagram).personaTitle,
+      timestamp: new Date().toISOString(),
+    };
+
+    // 保存到 localStorage（可后续导出分析）
+    const existingFeedback = JSON.parse(localStorage.getItem('career_gps_feedback') || '[]');
+    existingFeedback.push(feedbackData);
+    localStorage.setItem('career_gps_feedback', JSON.stringify(existingFeedback.slice(-100))); // 保留最近 100 条
+
+    // 显示感谢消息
+    const messages = {
+      helpful: '🎉 太好了！很高兴这份报告对你有帮助！',
+      improve: '💪 感谢反馈！我们会持续优化产品体验。',
+      suggestion: '💡 感谢建议！我们会认真考虑你的意见。',
+    };
+
+    alert(messages[type]);
+  };
+
   // 分享卡片组件
   const ShareCard = ({ mbti: cardMbti, holland: cardHolland, enneagram: cardEnneagram }: {
     mbti: string;
@@ -1752,10 +1778,50 @@ export default function Home() {
                     <p className="text-xs text-[#666666]">月薪</p>
                   </div>
                 </div>
-                <p className="text-xs text-[#999999] mt-4 text-center">基于当前市场数据估算，实际薪资因城市和公司而异</p>
+                <p className="text-xs opacity-60 mt-4 text-center">基于当前市场数据估算，实际薪资因城市和公司而异</p>
               </div>
             </div>
           )}
+
+          {/* 用户反馈收集 */}
+          <div className="mt-8 pt-8 border-t" style={{ borderColor: `${theme.secondary}20` }}>
+            <div className="text-center mb-4">
+              <p className="text-sm font-semibold mb-1" style={{ color: theme.text }}>这份报告对你有帮助吗？</p>
+              <p className="text-xs opacity-60" style={{ color: theme.text }}>你的反馈能帮助我们做得更好</p>
+            </div>
+            <div className="flex justify-center gap-3 flex-wrap">
+              <button
+                onClick={() => handleFeedback('helpful')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all hover:scale-105"
+                style={{ backgroundColor: `${theme.accent}20`, color: theme.text, border: `1px solid ${theme.accent}40` }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894c.777.918 1.616 1.666 2.5 1.666h3.764M15 12h3M9 12h3m-9 4h.01M12 21l9-9M12 3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                有帮助
+              </button>
+              <button
+                onClick={() => handleFeedback('improve')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all hover:scale-105"
+                style={{ backgroundColor: `${theme.secondary}20`, color: theme.text, border: `1px solid ${theme.secondary}40` }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.932-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.932 3l13.732 1c.77 1.333 2.693 1.333 3.464 0l4.89-8.485c.77-1.333.192-3-1.932-3z" />
+                </svg>
+                需要改进
+              </button>
+              <button
+                onClick={() => handleFeedback('suggestion')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all hover:scale-105"
+                style={{ backgroundColor: `${theme.accent}20`, color: theme.text, border: `1px solid ${theme.accent}40` }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 102-4h-.095-.532-5.192-2.653-.617-5.192a1.922 1.922 0 01-1.664-.987 1.922 1.922 0 01-1.664.987 1.922 1.922 0 01-1.664-.987V3a2 2 0 10-4 0v4.068c0 1.042-1.066 2.056-2.876 2.884a2.754 2.754 0 01-.252 1.015c0 .083.044.16.089.243l.008.01a2.812 2.812 0 001.573 4.786c.014.015.03.03.03.03h.005a2.75 2.75 0 011.573-4.787 2.762 2.762 0 01-.252-1.015c0-.083.044-.16-.089-.243l-.008-.01a2.812 2.812 0 00-1.573-4.786z" />
+                </svg>
+                有建议
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
