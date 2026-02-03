@@ -1354,107 +1354,455 @@ export default function Home() {
     setSurveySubmitted(false);
   };
 
-  // 分享卡片组件
+  // 赛博小票风文案生成器
+  const getCyberReceiptData = (mbti: string, holland: string, enneagram: string, profile: any) => {
+    // 高光称号库（根据性格类型生成）
+    const getHeroTitle = () => {
+      const titles: Record<string, string[]> = {
+        'INTJ': ['整顿职场的神', '莫得感情的杀手', '人间清醒'],
+        'INTP': ['拖延症冠军', '脑洞爆炸体', '社交电量 ERROR'],
+        'ENTJ': ['天选打工人', '资本家预备役', 'KPI 狂魔'],
+        'ENTP': ['杠精转世', '创意核弹', '不靠谱天才'],
+        'INFJ': ['深夜哲学家', '治愈系小天使', '过度共情怪'],
+        'INFP': ['玻璃心艺术家', '梦想收藏家', 'emo 常驻民'],
+        'ENFJ': ['传销头子', '团宠本宠', '社交恐怖分子'],
+        'ENFP': ['快乐修勾', '社牛天花板', '三分钟热度'],
+        'ISTJ': ['靠谱机器', '规则守护者', 'Excel 成精'],
+        'ISFJ': ['老母亲人格', '温暖抱枕', '万年备胎'],
+        'ESTJ': ['项目经理', '控制欲怪物', '效率狂人'],
+        'ESFJ': [' gossip 女王', '气氛组组长', '人形暖宝宝'],
+        'ISTP': ['工具人担当', '手搓高达', '沉默寡言哥'],
+        'ISFP': ['佛系躺平', '文艺青年', '活在当下'],
+        'ESTP': ['肾上腺素', '现充大佬', '刺激 seeker'],
+        'ESFP': ['派对动物', '戏精本精', '朋友圈摄影师'],
+      };
+      return titles[mbti]?.[Math.floor(Math.random() * 3)] || '神秘物种';
+    };
+
+    // 灵魂账单项
+    const getReceiptItems = () => {
+      const itemSets: Record<string, Array<{name: string, value: string}>> = {
+        'NT': [
+          { name: '脑洞容量', value: '999 TB' },
+          { name: '社交电量', value: 'ERROR' },
+          { name: '搬砖意愿', value: '-50%' },
+          { name: '搞钱野心', value: '⭐⭐⭐⭐⭐' },
+        ],
+        'NF': [
+          { name: '泪腺流量', value: '∞ mL' },
+          { name: '共情能力', value: 'MAX' },
+          { name: '现实感', value: 'OFFLINE' },
+          { name: '浪漫指数', value: '⭐⭐⭐⭐⭐' },
+        ],
+        'ST': [
+          { name: '执行效率', value: '200%' },
+          { name: '规则偏好', value: '∞' },
+          { name: '风险厌恶', value: '-100%' },
+          { name: '靠谱指数', value: '⭐⭐⭐⭐⭐' },
+        ],
+        'SP': [
+          { name: '行动力', value: 'INSTANT' },
+          { name: '耐心值', value: '0.01s' },
+          { name: '计划性', value: 'WHAT?' },
+          { name: '适应力', value: '⭐⭐⭐⭐⭐' },
+        ],
+      };
+
+      const type = ['INTJ', 'INTP', 'ENTJ', 'ENTP'].includes(mbti) ? 'NT' :
+                   ['INFJ', 'INFP', 'ENFJ', 'ENFP'].includes(mbti) ? 'NF' :
+                   ['ISTJ', 'ISFJ', 'ESTJ', 'ESFJ'].includes(mbti) ? 'ST' : 'SP';
+      return itemSets[type] || itemSets.NT;
+    };
+
+    // 金句库
+    const getQuote = () => {
+      const quotes: Record<string, string[]> = {
+        'INTJ': [
+          '你的才华，撑不起你想要睡到自然醒的野心。',
+          '世界很吵，但你内心的 BGM 很好听。',
+          '别试图理解 INTJ，我们自己都不理解自己。',
+        ],
+        'INTP': [
+          '间歇性踌躇满志，持续性混吃等死。',
+          '你的大脑是台超级计算机，但显卡是集成的。',
+          '想得太多，做得太少，这就是你的悲剧。',
+        ],
+        'ENTJ': [
+          '你不需要休息，你需要的是 KPI。',
+          '你的野心很大，但时间不多。',
+          '要么成为大佬，要么成为大佬的踏脚石。',
+        ],
+        'default': [
+          '人生苦短，别为难自己。',
+          '你的人生，你做主，但也别太任性。',
+          '每颗星星都有自己的轨迹，包括你这颗。',
+        ],
+      };
+      const typeQuotes = quotes[mbti] || quotes.default;
+      return typeQuotes[Math.floor(Math.random() * typeQuotes.length)];
+    };
+
+    // MBTI社交标签
+    const getSocialTag = () => {
+      const tags: Record<string, {type: string, target: string}> = {
+        'INTJ': { type: 'warning', target: '寻找 ENTJ 老板领养' },
+        'INTP': { type: 'warning', target: '禁止 ESFJ 靠近' },
+        'INFJ': { type: 'seeking', target: '寻找 ENFP 快乐修勾' },
+        'INFP': { type: 'warning', target: '禁止 ESTJ 伤害' },
+        'ENTJ': { type: 'seeking', target: '收购有执行力的 INTJ' },
+        'ENFP': { type: 'seeking', target: '需要 INFJ 治愈' },
+        'ISTJ': { type: 'seeking', target: '寻找靠谱队友' },
+        'ESTP': { type: 'warning', target: '禁止 INTP 纠结' },
+      };
+      return tags[mbti] || { type: 'neutral', target: '寻找同类灵魂' };
+    };
+
+    const rarity = calculateRarity(mbti, holland, enneagram);
+    const items = getReceiptItems();
+    const socialTag = getSocialTag();
+
+    return {
+      heroTitle: getHeroTitle(),
+      items,
+      quote: getQuote(),
+      rarity: rarity.label,
+      rarityScore: rarity.score,
+      socialTag,
+      orderId: `#${mbti}-${enneagram}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`,
+    };
+  };
+
+  // 分享卡片组件 - 赛博朋克小票风
   const ShareCard = ({ mbti: cardMbti, holland: cardHolland, enneagram: cardEnneagram }: {
     mbti: string;
     holland: string;
     enneagram: string;
   }) => {
     const profile = getPersonalityProfile(cardMbti, cardHolland, cardEnneagram);
-    const theme = getThemeColors(cardMbti);
-    const rarity = calculateRarity(cardMbti, cardHolland, cardEnneagram);
+    const receiptData = getCyberReceiptData(cardMbti, cardHolland, cardEnneagram, profile);
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+    const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
 
     return (
       <div
         ref={shareCardRef}
-        className="relative w-[375px] h-[667px] rounded-3xl overflow-hidden shadow-2xl"
+        className="relative overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${theme.background} 0%, ${theme.cardBg} 100%)`,
-          fontFamily: 'system-ui, -apple-system, sans-serif',
+          width: '375px',
+          height: '667px',
+          fontFamily: '"Courier New", "Menlo", monospace',
+          backgroundColor: '#f5f5f5',
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px)
+          `,
         }}
       >
-        {/* 装饰性背景元素 */}
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-20" style={{ background: theme.accent }} />
-        <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-10" style={{ background: theme.secondary }} />
+        {/* 锯齿边缘效果 - 顶部 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '8px',
+            background: `linear-gradient(135deg, #e0e0e0 25%, transparent 25%) -8px 0,
+                        linear-gradient(225deg, #e0e0e0 25%, transparent 25%) -8px 0,
+                        linear-gradient(315deg, #e0e0e0 25%, transparent 25%),
+                        linear-gradient(45deg, #e0e0e0 25%, transparent 25%)`,
+          backgroundSize: '16px 16px',
+          }}
+        />
+
+        {/* 锯齿边缘效果 - 底部 */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '8px',
+            background: `linear-gradient(135deg, #e0e0e0 25%, transparent 25%) -8px 0,
+                        linear-gradient(225deg, #e0e0e0 25%, transparent 25%) -8px 0,
+                        linear-gradient(315deg, #e0e0e0 25%, transparent 25%),
+                        linear-gradient(45deg, #e0e0e0 25%, transparent 25%)`,
+            backgroundSize: '16px 16px',
+          }}
+        />
+
+        {/* 皱褶纹理 */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.03,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          }}
+        />
 
         {/* 内容区域 */}
-        <div className="relative z-10 p-8 h-full flex flex-col">
-          {/* 顶部标签 */}
-          <div className="flex justify-between items-start mb-6">
-            <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: theme.accent, color: theme.background }}>
-              Build Your Career
+        <div className="relative z-10 p-6 h-full flex flex-col">
+          {/* 区域 A: 头部信息 */}
+          <div className="mb-4 pt-2">
+            <div className="text-center mb-4">
+              <div
+                style={{
+                  backgroundColor: '#1a1a1a',
+                  color: '#fff',
+                  padding: '4px 12px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  letterSpacing: '1px',
+                  display: 'inline-block',
+                }}
+              >
+                [ 赛博职场实验室 © 2025 ]
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="px-2 py-1 rounded text-xs font-bold" style={{ backgroundColor: rarity.color, color: theme.background }}>
-                {rarity.label}
+
+            {/* 元数据 */}
+            <div className="text-xs" style={{ color: '#333', fontSize: '10px', lineHeight: '1.6' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>DATE: {dateStr}</span>
+                <span>TIME: {timeStr}</span>
               </div>
-              <div className="text-xs font-bold" style={{ color: theme.text }}>
-                {rarity.score}%
-              </div>
+              <div>ORDER ID: {receiptData.orderId}</div>
             </div>
           </div>
 
-          {/* 主要内容 */}
-          <div className="flex-1 flex flex-col justify-center">
-            {/* 性格组合 */}
-            <div className="mb-4">
-              <div className="flex gap-2 mb-3">
-                <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: theme.text }}>
-                  {cardMbti}
-                </span>
-                <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: theme.text }}>
-                  {cardHolland}
-                </span>
-                <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: theme.text }}>
-                  {cardEnneagram}
-                </span>
+          {/* 区域 B: 核心视觉 - 高光称号 */}
+          <div className="mb-4">
+            <div
+              style={{
+                position: 'relative',
+                border: '3px solid #1a1a1a',
+                padding: '12px',
+                backgroundColor: '#fff',
+                boxShadow: '4px 4px 0 rgba(0,0,0,0.2)',
+                transform: 'rotate(-1deg)',
+              }}
+            >
+              {/* 荧光高亮效果 */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '-2px',
+                  left: '-2px',
+                  right: '-2px',
+                  bottom: '-2px',
+                  border: '2px solid #00ff88',
+                  zIndex: -1,
+                  transform: 'rotate(1deg)',
+                }}
+              />
+              <div
+                style={{
+                  fontSize: '28px',
+                  fontWeight: '900',
+                  color: '#1a1a1a',
+                  textAlign: 'center',
+                  lineHeight: '1.2',
+                  fontFamily: '"Arial Black", sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '-1px',
+                }}
+              >
+                {receiptData.heroTitle}
               </div>
             </div>
 
-            {/* 人设标题 */}
-            <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ color: theme.text, fontFamily: 'Georgia, serif' }}>
-              {profile.personaTitle}
-            </h1>
+            {/* 性格标签 */}
+            <div className="flex justify-center gap-2 mt-3">
+              <span
+                style={{
+                  backgroundColor: '#1a1a1a',
+                  color: '#fff',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                }}
+              >
+                {cardMbti}
+              </span>
+              <span
+                style={{
+                  backgroundColor: '#1a1a1a',
+                  color: '#fff',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                }}
+              >
+                {cardHolland}
+              </span>
+              <span
+                style={{
+                  backgroundColor: '#1a1a1a',
+                  color: '#fff',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                }}
+              >
+                {cardEnneagram}
+              </span>
+            </div>
+          </div>
 
-            {/* 简化版雷达图 */}
-            <div className="mb-4">
-              {profile.careerRadar.slice(0, 3).map((item) => (
-                <div key={item.name} className="mb-2">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs" style={{ color: theme.text }}>{item.name}</span>
-                    <span className="text-xs font-bold" style={{ color: theme.accent }}>{item.score}</span>
-                  </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${item.score}%`, backgroundColor: theme.accent }}
-                    />
-                  </div>
+          {/* 区域 C: 灵魂账单 */}
+          <div className="mb-4">
+            <div style={{ borderTop: '1px dashed #333', marginBottom: '8px' }}></div>
+            <div style={{ fontSize: '11px', color: '#1a1a1a' }}>
+              {receiptData.items.map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  <span style={{ color: '#666' }}>ITEM: {item.name}</span>
+                  <span style={{
+                    fontWeight: 'bold',
+                    color: item.value.includes('ERROR') ? '#ff4444' :
+                           item.value.includes('⭐') ? '#ffaa00' : '#1a1a1a',
+                  }}>
+                    {item.value}
+                  </span>
                 </div>
               ))}
-            </div>
-
-            {/* 推荐岗位 */}
-            <div className="mb-4">
-              <p className="text-xs mb-2 opacity-70" style={{ color: theme.text }}>推荐岗位</p>
-              <div className="flex flex-wrap gap-2">
-                {profile.previewJobs.slice(0, 3).map((job) => (
-                  <span key={job.name} className="px-2 py-1 rounded text-xs" style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: theme.text }}>
-                    {job.name}
-                  </span>
-                ))}
+              <div style={{ borderTop: '1px dashed #333', margin: '8px 0' }}></div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontWeight: '900',
+                  fontSize: '12px',
+                }}
+              >
+                <span>TOTAL VALUE:</span>
+                <span>无法估量</span>
               </div>
             </div>
           </div>
 
-          {/* 底部信息 */}
-          <div className="text-center">
-            <p className="text-xs opacity-60 mb-2" style={{ color: theme.text }}>
-              观己 Discover Self —— 知人者智，自知者明
-            </p>
-            {/* 二维码占位符 */}
-            <div className="w-16 h-16 mx-auto rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
-              <span className="text-xs" style={{ color: theme.text }}>扫码测试</span>
+          {/* 区域 D: 毒舌金句 */}
+          <div className="mb-4" style={{ position: 'relative' }}>
+            {/* 手写标注线 */}
+            <div style={{ position: 'absolute', top: '-4px', left: '-8px', right: '-8px', bottom: '-4px', border: '1px solid #ff4444', transform: 'rotate(-0.5deg)' }} />
+            <div
+              style={{
+                fontSize: '11px',
+                color: '#333',
+                fontStyle: 'italic',
+                lineHeight: '1.5',
+                padding: '8px',
+                backgroundColor: 'rgba(255,255,255,0.8)',
+                fontFamily: '"Comic Sans MS", cursive, sans-serif',
+              }}
+            >
+              &quot;{receiptData.quote}&quot;
+            </div>
+          </div>
+
+          {/* 区域 E: 底部社交区 */}
+          <div className="mt-auto">
+            {/* 稀有度标签 */}
+            <div
+              style={{
+                border: '2px solid #00ff88',
+                backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                padding: '8px',
+                textAlign: 'center',
+                marginBottom: '12px',
+              }}
+            >
+              <div style={{ fontSize: '10px', color: '#00aa55', fontWeight: 'bold', marginBottom: '2px' }}>
+                {receiptData.rarity}
+              </div>
+              <div style={{ fontSize: '9px', color: '#666' }}>
+                全网仅 {receiptData.rarityScore}% 的人拥有此配置
+              </div>
+            </div>
+
+            {/* 社交标签 */}
+            <div
+              style={{
+                backgroundColor: receiptData.socialTag.type === 'warning' ? '#ff4444' : '#1a1a1a',
+                color: '#fff',
+                padding: '6px',
+                textAlign: 'center',
+                fontSize: '10px',
+                marginBottom: '12px',
+                fontWeight: 'bold',
+              }}
+            >
+              {receiptData.socialTag.type === 'warning' ? '⚠️ 警告：' : '🔍 寻找：'}
+              {receiptData.socialTag.target}
+            </div>
+
+            {/* 条形码 + 二维码 */}
+            <div className="flex items-center justify-center gap-3 mb-2">
+              {/* 条形码装饰 */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '2px',
+                  height: '40px',
+                  width: '120px',
+                }}
+              >
+                {[...Array(20)].map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      flex: Math.random() > 0.5 ? 2 : 1,
+                      backgroundColor: '#1a1a1a',
+                      height: '100%',
+                    }}
+                  />
+                ))}
+              </div>
+              {/* 二维码占位 */}
+              <div
+                style={{
+                  width: '50px',
+                  height: '50px',
+                  backgroundColor: '#1a1a1a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#fff',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '2px',
+                    padding: '4px',
+                  }}
+                >
+                  {[...Array(16)].map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        backgroundColor: Math.random() > 0.3 ? '#1a1a1a' : 'transparent',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 引导文案 */}
+            <div className="text-center" style={{ fontSize: '9px', color: '#999', marginTop: '8px' }}>
+              扫码打印你的灵魂小票 👇
             </div>
           </div>
         </div>
