@@ -393,7 +393,7 @@ export default function Home() {
                 <h4 className="text-sm font-semibold text-[#666666] uppercase tracking-wider mb-4">专家寄语</h4>
                 <div className="bg-[#F5F5F5] rounded-lg p-6">
                   <p className="text-[#1A1A1A] text-sm leading-relaxed">
-                    "你的大脑是台超级跑车，但常常忘记加油。INTP 7w8 的致命短板是三分钟热度+执行力不足。找一个能容忍你发散又能托底你落地的环境，比选行业更重要。"
+                    &ldquo;你的大脑是台超级跑车，但常常忘记加油。INTP 7w8 的致命短板是三分钟热度+执行力不足。找一个能容忍你发散又能托底你落地的环境，比选行业更重要。&rdquo;
                   </p>
                   <p className="text-xs text-[#999999] mt-3 text-right">— Build Your Career AI</p>
                 </div>
