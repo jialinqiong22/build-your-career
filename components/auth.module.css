@@ -1,0 +1,203 @@
+.shell {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 90px;
+  padding: 64px 0 80px;
+  align-items: start;
+}
+.intro {
+  padding-top: 34px;
+}
+.intro h1 {
+  font-size: 48px;
+  line-height: 1.45;
+  margin: 24px 0;
+  letter-spacing: 1px;
+}
+.boundary {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+  margin-top: 48px;
+  max-width: 420px;
+}
+.boundary p {
+  font-size: 13px;
+}
+.card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-top: 3px solid #738259;
+  padding: 32px 36px;
+}
+.cardHeading h2 {
+  font-size: 28px;
+  margin: 12px 0 26px;
+}
+.fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+.field input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  background: var(--paper);
+  border: 1px solid #bdc7ba;
+  border-radius: 3px;
+  color: var(--ink);
+}
+.field input::placeholder {
+  color: #7a8079;
+  font-size: 12px;
+}
+.help {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.8;
+}
+.method {
+  padding: 0;
+  border: 0;
+  margin: 0 0 20px;
+  font-size: 14px;
+}
+.method legend {
+  margin-bottom: 10px;
+}
+.method label {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-right: 25px;
+  cursor: pointer;
+}
+.showPassword {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  margin: 0 0 20px;
+}
+.error {
+  background: #f3e3d9;
+  color: #803d2b;
+  padding: 12px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.submit {
+  width: 100%;
+  margin: 4px 0 8px;
+}
+.switch {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  margin-top: 24px;
+  font-size: 13px;
+}
+.switch a {
+  color: var(--ink);
+  text-underline-offset: 4px;
+  text-decoration: underline;
+}
+.nav {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 400px;
+  font-size: 13px;
+}
+.nav a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.nav button {
+  background: transparent;
+  color: var(--ink);
+  padding: 6px 0;
+  font-size: 12px;
+}
+.registerLink {
+  border: 1px solid #9ca99f;
+  border-radius: 3px;
+  padding: 5px 14px;
+}
+.username {
+  max-width: 190px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.navError {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: #803d2b;
+  text-align: right;
+}
+.headerMeta {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+@media (max-width: 950px) {
+  .shell {
+    gap: 40px;
+  }
+  .headerMeta > span {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .shell {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 30px 0 50px;
+  }
+  .intro {
+    padding-top: 0;
+  }
+  .intro h1 {
+    font-size: 36px;
+    margin: 18px 0;
+  }
+  .boundary {
+    margin-top: 24px;
+    padding-top: 18px;
+    max-width: none;
+  }
+  .card {
+    padding: 25px 22px;
+  }
+  .nav {
+    max-width: 180px;
+    gap: 10px;
+  }
+  .username {
+    max-width: 95px;
+  }
+}
+@media (max-width: 380px) {
+  .nav {
+    gap: 7px;
+    max-width: 135px;
+  }
+  .registerLink {
+    padding: 4px 10px;
+  }
+}

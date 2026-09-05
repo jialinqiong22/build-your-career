@@ -37,3 +37,6 @@ yarn-error.log*
 next-env.d.ts
 /.playwright-cli/
 /output/
+
+.env*
+!.env.example

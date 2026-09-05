@@ -17,13 +17,17 @@ test("unknown and missing answers never become low scores", () => {
 });
 test("reverse scoring and minimum coverage", () => {
   const p = blank();
+  const questions = [
+    { id: "tO0", dimension: "O", text: "test" },
+    { id: "tO2", dimension: "O", text: "test", reverse: true },
+  ];
   p.answers.tO0 = 5;
-  assert.equal(score(traits, p.answers)[0].score, null);
+  assert.equal(score(questions, p.answers)[0].score, null);
   p.answers.tO2 = 1;
-  assert.equal(score(traits, p.answers)[0].score, 100);
+  assert.equal(score(questions, p.answers)[0].score, 100);
   p.answers.tO0 = 1;
   p.answers.tO2 = 5;
-  assert.equal(score(traits, p.answers)[0].score, 0);
+  assert.equal(score(questions, p.answers)[0].score, 0);
 });
 test("flat profile has no forced identity", () => {
   const p = blank();

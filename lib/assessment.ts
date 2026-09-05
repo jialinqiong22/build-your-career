@@ -1,5 +1,8 @@
-export const VERSION = "2.0-exploration";
-export const KEY = "career-positioning-v2";
+import { questions50 } from "./bigfive/data50.ts";
+import { scoreBigFive } from "./bigfive/scoring.ts";
+import type { BigFiveQuestion } from "./bigfive/types.ts";
+export const VERSION = "3.0-ipip";
+export const KEY = "career-positioning-v3";
 export const stages = ["本科在读", "硕士在读", "本科应届", "硕士应届"];
 export const directions = [
   "还没有方向",
@@ -82,47 +85,16 @@ const interestItems: Record<string, string[]> = {
     "制定流程，让重复任务更有条理。",
   ],
 };
-const traitItems: Record<string, [string, boolean?][]> = {
-  O: [
-    ["我常主动接触不熟悉的观点或领域。"],
-    ["遇到不同解法，我愿意尝试新方法。"],
-    ["即使有机会，我也很少探索熟悉范围之外的内容。", true],
-  ],
-  C: [
-    ["我会把任务拆成步骤并跟进进度。"],
-    ["没有人提醒时，我也会努力履行约定。"],
-    ["我经常拖到最后才开始重要任务。", true],
-  ],
-  E: [
-    ["与一群人交流后，我通常更有精神。"],
-    ["在不熟悉的群体里，我常主动开口。"],
-    ["持续社交后，我通常很需要独处恢复。", true],
-  ],
-  A: [
-    ["意见冲突时，我会先理解对方的处境。"],
-    ["合作时，我愿意照顾别人的实际困难。"],
-    ["讨论问题时，我很少考虑表达方式是否影响别人。", true],
-  ],
-  N: [
-    ["遇到不确定的结果，我容易反复担心。"],
-    ["负面反馈常让我较长时间难以平静。"],
-    ["事情出错后，我通常能较快恢复平稳。", true],
-  ],
-};
 export const interests: Question[] = Object.entries(interestItems).flatMap(
   ([dimension, items]) =>
     items.map((text, i) => ({ id: `i${dimension}${i}`, dimension, text })),
 );
-export const traits: Question[] = Object.entries(traitItems).flatMap(
-  ([dimension, items]) =>
-    items.map(([text, reverse], i) => ({
-      id: `t${dimension}${i}`,
-      dimension,
-      text,
-      reverse,
-    })),
-);
+export const traits: Question[] = questions50.map((q) => ({
+  ...q,
+  dimension: q.domain,
+}));
 export type Profile = {
+  bigFiveForm: "50" | "120";
   version: string;
   stage: string;
   direction: string;
@@ -131,8 +103,9 @@ export type Profile = {
   priorities: string[];
   evidence: { level: number; text: string }[];
 };
-export function blank(): Profile {
+export function blank(bigFiveForm: "50" | "120" = "50"): Profile {
   return {
+    bigFiveForm,
     version: VERSION,
     stage: stages[0],
     direction: directions[0],
@@ -142,11 +115,15 @@ export function blank(): Profile {
     evidence: evidenceNames.map(() => ({ level: 0, text: "" })),
   };
 }
-export function validProfile(input: unknown): input is Profile {
+export function validProfile(
+  input: unknown,
+  bank: readonly BigFiveQuestion[] = questions50,
+): input is Profile {
   if (!input || typeof input !== "object") return false;
   const p = input as Profile;
   if (
     p.version !== VERSION ||
+    p.bigFiveForm !== String(bank.length) ||
     !stages.includes(p.stage) ||
     !directions.includes(p.direction) ||
     typeof p.target !== "string" ||
@@ -155,7 +132,7 @@ export function validProfile(input: unknown): input is Profile {
     return false;
   if (!p.answers || typeof p.answers !== "object" || Array.isArray(p.answers))
     return false;
-  const ids = new Set([...interests, ...traits].map((q) => q.id));
+  const ids = new Set([...interests, ...bank].map((q) => q.id));
   if (
     !Object.entries(p.answers).every(
       ([k, v]) =>
@@ -207,9 +184,13 @@ export function score(questions: Question[], answers: Profile["answers"]) {
     };
   });
 }
-export function finished(p: Profile) {
+export function finished(
+  p: Profile,
+  bank: readonly BigFiveQuestion[] = questions50,
+) {
   return (
-    [...interests, ...traits].every((q) => Object.hasOwn(p.answers, q.id)) &&
+    bank.length > 0 &&
+    [...interests, ...bank].every((q) => Object.hasOwn(p.answers, q.id)) &&
     p.priorities.length === 3 &&
     p.evidence.every((e) => e.level === 0 || e.text.trim().length >= 12)
   );
@@ -249,9 +230,12 @@ export const activities: Record<
     evidence: 3,
   },
 };
-export function report(p: Profile) {
+export function report(
+  p: Profile,
+  bank: readonly BigFiveQuestion[] = questions50,
+) {
   const interest = score(interests, p.answers),
-    trait = score(traits, p.answers);
+    trait = scoreBigFive(bank, p.answers);
   const sorted = interest
     .filter((x) => x.score !== null)
     .sort((a, b) => b.score! - a.score!);
@@ -298,25 +282,12 @@ export function report(p: Profile) {
   const answered = Object.values(p.answers).filter(
     (v): v is number => typeof v === "number",
   );
-  if (answered.length < 26)
+  if (answered.length < Math.ceil((18 + bank.length) * 0.8))
     flags.push("部分维度信息有限，未显示的维度需要更多体验或回答。");
   if (answered.length >= 15 && new Set(answered).size === 1)
     flags.push(
       "所有有效题使用了同一选项，建议重新确认；这并不证明回答不真实。",
     );
-  for (const d of Object.keys(traitNames)) {
-    const qs = traits.filter((q) => q.dimension === d),
-      f = p.answers[qs[0].id],
-      r = p.answers[qs[2].id];
-    if (
-      typeof f === "number" &&
-      typeof r === "number" &&
-      Math.abs(f - (6 - r)) >= 3
-    )
-      flags.push(
-        `${traitNames[d]}相关回答存在差异，可以结合具体情境重新理解。`,
-      );
-  }
   if (p.evidence.every((e) => e.level === 0))
     flags.push("暂时没有行为经历支持；兴趣倾向不能直接等同于能力。");
   const conflicts: string[] = [];

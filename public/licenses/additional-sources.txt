@@ -1,0 +1,55 @@
+Additional instruments: sourcing and limitations
+Reviewed 2026-09-06
+
+Shipped Holland module: the project's existing 18 ORIGINAL Chinese exploration
+items, retained verbatim with existing IDs. They refer to the general RIASEC
+framework, not to a copied commercial questionnaire. They are not the requested
+90-item standard/full version and have no established psychometric validation.
+Scores are linear within-scale response intensity, never norms or percentiles.
+
+Shipped Enneagram module: 36 ORIGINAL Chinese motivation-reflection prompts
+written for this project after the user's acceptance of an original alternative
+on 2026-09-06. Four prompts per theme, interleaved. The interpretation prompts
+are also original. No RHETI or OEPS items are copied. This is NOT a classic,
+standard, or validated Enneagram instrument. Scores show agreement with these
+prompts, not diagnosed types or hidden fears. It is optional and does not enter
+core personal-positioning calculations. The optional reference link does not
+send this app's answers to the third party. External sites have their own terms.
+https://enneagram-personality.com/zh-Hans
+https://enneagram-personality.com/en/test/terms
+
+Sources investigated but NOT copied into this product:
+
+1. Interest Item Pool / RIASEC Markers.
+https://jrounds.weebly.com/riasec-markers-scalesitems.html
+The authors' current specific permission statement grants free noncommercial
+use, despite the general site and older publications calling the pool public
+domain. Because commercial reuse is not clearly granted by the current source,
+the 48-item bank was not imported. Site lists update date 09/10/2023.
+
+2. O*NET(R) Interest Profiler 60-item Short Form.
+https://www.onetcenter.org/IP.html
+https://www.onetcenter.org/license_tools.html
+https://www.onetcenter.org/license_toolsdev.html
+Verbatim redistribution: CC BY-ND 4.0. Translation/content modification:
+O*NET Tools Developer License section 3(b)(2) requires a validation study prior
+to introducing the new product. No such study has been performed for this app.
+Therefore no Chinese translation or adapted questionnaire was shipped.
+
+3. Open Enneagram of Personality Scales, Eric Jorgenson.
+https://openpsychometrics.org/tests/OEPS/development/
+https://openpsychometrics.org/development/
+The development index refers generically to a Creative Commons license but the
+specific license and commercial adaptation permission could not be established
+from the reviewed materials. Version 1.0 downloadable ODT has 36 items; latest
+development page updated 18 January 2026 describes 57, while the entry page
+describes 54. No items imported, and no inaccurate claim of 'latest' made.
+
+4. GitHub nthmost/rheti-python.
+https://github.com/nthmost/rheti-python
+MIT repository metadata is not sufficient to establish reuse rights for the
+RHETI questionnaire reproduced from its original PDF. No content imported.
+
+Completion times for original modules are estimates that need pilot testing.
+No psychometric validation or commercial scale equivalence is claimed.
+These notes record product implementation choices, not a legal opinion.

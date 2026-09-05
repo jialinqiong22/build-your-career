@@ -1,0 +1,80 @@
+Big Five source notices
+
+IPIP item pool: https://ipip.ori.org/ (public domain item text).
+50-item source: https://github.com/KatherineGuoGuo/bigfive-open
+Pinned commit: 05084e53900f546b22c1802d72af2c698df9ae21
+Path: src/data/questions.ts
+120-item source: https://github.com/rubynor/bigfive-web
+Pinned commit: e8f3caca49edafb9bc6b927eff7fbc1264312c24
+Paths: packages/questions/src/data/en/questions.ts and zh-cn/questions.ts
+
+Adaptation: English wording, original IDs, domains, keyed direction and facets
+are preserved. The upstream Chinese translation was reviewed against English;
+our displayed Chinese wording is a local plain-language adaptation, not a
+validated Chinese instrument. No population norms or diagnostic claims are made.
+The 120-item O6 political items retain source content and may be skipped as
+not applicable. Do not treat skipped items as neutral. Our local completeness
+policy requires 80% of domain items and 3 of 4 facet items. This policy and the
+linear 0–100 display are application choices, not validated source norms.
+The 50-item and 120-item instruments differ: scores are not interchangeable.
+120 items have 30 facets; 50 items do not supply facet scores.
+Charges in this product are for the report and consultation service, not
+exclusive ownership of the public-domain item pool.
+
+Full upstream notices follow:
+
+MIT License
+
+Copyright (c) 2026 Katherine Li
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+The IPIP-50 question set bundled in src/data/questions.ts is from the
+International Personality Item Pool (https://ipip.ori.org/) and is in the
+public domain.
+
+Citation: Goldberg, L. R. (1992). The development of markers for the Big-Five
+factor structure. Psychological Assessment, 4, 26-42.
+
+MIT License
+
+Copyright (c) 2024 B5 Holding AS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+https://github.com/KatherineGuoGuo/bigfive-open.git
+https://github.com/rubynor/bigfive-web.git
