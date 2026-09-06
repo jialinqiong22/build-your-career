@@ -26,7 +26,7 @@
 .card {
   background: var(--white);
   border: 1px solid var(--line);
-  border-top: 3px solid #738259;
+  border-top: 3px solid var(--klein);
   padding: 32px 36px;
 }
 .cardHeading h2 {
@@ -51,12 +51,12 @@
   min-width: 0;
   padding: 11px 12px;
   background: var(--paper);
-  border: 1px solid #bdc7ba;
+  border: 1px solid #b9c4e2;
   border-radius: 3px;
   color: var(--ink);
 }
 .field input::placeholder {
-  color: #7a8079;
+  color: #737c90;
   font-size: 12px;
 }
 .help {
@@ -140,7 +140,7 @@
   font-size: 12px;
 }
 .registerLink {
-  border: 1px solid #9ca99f;
+  border: 1px solid var(--klein-line);
   border-radius: 3px;
   padding: 5px 14px;
 }

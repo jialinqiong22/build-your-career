@@ -14,6 +14,7 @@
     "auth:cleanup": "node scripts/cleanup-auth.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1127.0",
     "@marsidev/react-turnstile": "^1.6.1",
     "@vercel/functions": "^3.9.5",
     "bcrypt": "^6.0.0",
