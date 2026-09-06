@@ -20,6 +20,7 @@ import {
   SESSION_SECONDS,
 } from "./auth-crypto";
 import { sameOrigin } from "./request-origin";
+import { verifyTurnstile } from "./turnstile";
 
 const responseHeaders = {
   "Cache-Control": "private, no-store",
@@ -124,6 +125,21 @@ export async function credentials(
       mode === "register" ? 5 : 10,
       900,
     );
+    if (mode === "register") {
+      const verification = await verifyTurnstile({
+        token: body.turnstileToken,
+        secret: process.env.TURNSTILE_SECRET_KEY,
+        expectedHostname: new URL(request.url).hostname,
+        expectedAction: "register",
+      });
+      if (!verification.ok) {
+        if (verification.reason === "misconfigured")
+          throw new AuthError("注册验证尚未配置，请稍后再试。", 503);
+        if (verification.reason === "unavailable")
+          throw new AuthError("人机验证服务暂时不可用，请稍后重试。", 503);
+        throw new AuthError("人机验证无效或已过期，请重新验证。", 403);
+      }
+    }
     const db = getDb();
     const token = newSessionToken();
     const oldToken = requestToken(request);

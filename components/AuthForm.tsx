@@ -1,5 +1,6 @@
 "use client";
 
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import styles from "./auth.module.css";
@@ -18,7 +19,10 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
   const [error, setError] = useState("");
   const [retryUntil, setRetryUntil] = useState(0);
   const [seconds, setSeconds] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const submitting = useRef(false);
+  const turnstile = useRef<TurnstileInstance>(null);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   useEffect(() => {
     if (!retryUntil) return;
@@ -51,6 +55,10 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
       setError("两次输入的密码不一致，请重新确认。");
       return;
     }
+    if (register && !turnstileToken) {
+      setError("请先完成人机验证。");
+      return;
+    }
     const account = (
       register ? (kind === "email" ? email : phone) : identifier
     ).trim();
@@ -65,6 +73,7 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
           ...(register ? { username: username.trim() } : {}),
           identifier: account,
           password,
+          ...(register ? { turnstileToken } : {}),
         }),
       });
       const data = await response.json().catch(() => null);
@@ -90,6 +99,10 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
       if (!data?.user) throw new Error("未能确认登录状态，请重新登录。");
       window.location.assign("/");
     } catch (cause) {
+      if (register) {
+        setTurnstileToken("");
+        turnstile.current?.reset();
+      }
       setError(
         cause instanceof Error ? cause.message : "网络连接异常，请稍后重试。",
       );
@@ -292,9 +305,52 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
               操作过于频繁，请在 {seconds} 秒后重试。
             </p>
           )}
+          {register &&
+            (turnstileSiteKey ? (
+              <div className={styles.turnstile}>
+                <Turnstile
+                  ref={turnstile}
+                  siteKey={turnstileSiteKey}
+                  onSuccess={(token) => {
+                    setTurnstileToken(token);
+                    setError("");
+                  }}
+                  onExpire={() => setTurnstileToken("")}
+                  onTimeout={() => setTurnstileToken("")}
+                  onError={(code) => {
+                    setTurnstileToken("");
+                    setError(
+                      String(code) === "110200"
+                        ? "当前访问域名尚未加入人机验证白名单，请联系管理员。"
+                        : "人机验证暂时无法完成，请刷新后重试。",
+                    );
+                    return true;
+                  }}
+                  onUnsupported={() => {
+                    setTurnstileToken("");
+                    setError("当前浏览器无法完成人机验证，请更换浏览器后重试。");
+                  }}
+                  options={{
+                    action: "register",
+                    language: "zh-cn",
+                    responseField: false,
+                    size: "flexible",
+                    theme: "light",
+                  }}
+                />
+              </div>
+            ) : (
+              <p className={styles.error} role="alert">
+                注册验证尚未配置，请稍后再试。
+              </p>
+            ))}
           <button
             className={`primary ${styles.submit}`}
-            disabled={pending || seconds > 0}
+            disabled={
+              pending ||
+              seconds > 0 ||
+              (register && (!turnstileSiteKey || !turnstileToken))
+            }
             type="submit"
           >
             {pending ? "正在处理…" : register ? "注册并登录 →" : "登录 →"}
