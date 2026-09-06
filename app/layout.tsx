@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import CrispChat from "@/components/CrispChat";
 import LiquidGlassBackground from "@/components/ui/liquid-glass-background";
 import "./globals.css";
 
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body className="antialiased" suppressHydrationWarning>
         <LiquidGlassBackground />
         {children}
+        <CrispChat />
       </body>
     </html>
   );

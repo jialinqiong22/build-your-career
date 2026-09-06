@@ -16,6 +16,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",
     "@marsidev/react-turnstile": "^1.6.1",
+    "@react-email/components": "^1.0.12",
     "@vercel/functions": "^3.9.5",
     "bcrypt": "^6.0.0",
     "drizzle-orm": "^0.45.2",
@@ -23,6 +24,7 @@
     "pg": "^8.23.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "resend": "^6.26.0",
     "server-only": "^0.0.1"
   },
   "devDependencies": {

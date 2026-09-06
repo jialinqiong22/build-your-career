@@ -21,6 +21,7 @@ import {
 } from "./auth-crypto";
 import { sameOrigin } from "./request-origin";
 import { verifyTurnstile } from "./turnstile";
+import { sendWelcomeEmail } from "./email";
 
 const responseHeaders = {
   "Cache-Control": "private, no-store",
@@ -222,6 +223,18 @@ export async function credentials(
             ),
           );
       });
+    }
+    if (mode === "register" && identifier.kind === "email") {
+      try {
+        await sendWelcomeEmail(
+          identifier.value,
+          user.username,
+          new URL(request.url).origin,
+        );
+      } catch {
+        // Registration succeeds even when the optional welcome email is unavailable.
+        console.error("Welcome email unavailable");
+      }
     }
     return Response.json(
       { user },
