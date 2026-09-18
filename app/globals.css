@@ -51,6 +51,40 @@
 .landing-sample-outline { padding-left: 20px; font-size: 14px; line-height: 2.3; }
 .landing-sample-task { background: #f5f5f5; padding: 16px; margin-top: 24px; font-size: 13px; }
 .landing-sample-task p { margin-bottom: 0; }
+.landing-cases > p { max-width: 710px; }
+.landing-cases-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 26px; }
+.landing-case { min-width: 0; padding: 24px; border: 1px solid var(--line); background: white; display: flex; flex-direction: column; }
+.case-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.case-badge { font-size: 11px; padding: 3px 8px; border: 1px solid var(--klein-line); color: var(--klein); background: var(--klein-soft); }
+.case-badge[data-source="sample"] { border-color: var(--line); color: var(--muted); background: #f5f5f5; }
+.case-badge-real { border-style: dashed; }
+.case-badge-scope { background: white; color: var(--ink); border-color: var(--ink); }
+.case-free-note { font-size: 13px; color: var(--muted); margin: auto 0 0; border-top: 1px solid var(--line); padding-top: 12px; }
+.landing-case h3 { margin: 0 0 8px; }
+.case-tier-note { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+.landing-case .bars { gap: 12px; }
+.case-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.case-chips span { font-size: 12px; padding: 3px 8px; border: 1px solid var(--line); }
+.case-chips .case-chips-label { width: 100%; padding: 0; margin-top: 6px; border: 0; font-size: 11px; letter-spacing: 0.1em; color: var(--muted); }
+.case-chips .case-chips-label:first-child { margin-top: 0; }
+.landing-case details { margin-top: 16px; border-top: 1px solid var(--line); }
+.landing-case summary { cursor: pointer; list-style: none; padding: 12px 0 0; font-size: 13px; color: var(--muted); min-height: 44px; }
+.landing-case summary::-webkit-details-marker { display: none; }
+.landing-case details p { font-size: 13px; margin: 10px 0 0; }
+.landing-case details strong { font-weight: 600; }
+.landing-case .case-task { background: #f5f5f5; padding: 12px; margin: 12px 0 16px; font-size: 13px; }
+.landing-case .case-task p { margin: 4px 0 0; }
+.landing-voices > p { max-width: 710px; }
+.landing-voices-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 26px; }
+.landing-voice-slot { min-height: 120px; padding: 18px; border: 1px dashed var(--klein-line); color: var(--muted); font-size: 13px; display: flex; align-items: center; }
+.landing-voices-actions { margin-top: 18px; }
+.landing-module-shorttime { flex-shrink: 0; font-size: 12px; color: var(--muted); }
+.landing-faq-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-top: 22px; }
+.landing-faq-tabs button { padding: 10px 16px; font-size: 14px; color: var(--muted); background: transparent; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; min-height: 44px; }
+.landing-faq-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--klein); font-weight: 600; }
+.landing-faq-item { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.landing-faq-item h3 { font-size: 15px; margin: 0 0 6px; }
+.landing-faq-item p { margin: 0; }
 .landing-module { border-top: 1px solid var(--line); }
 .landing-module:last-of-type { border-bottom: 1px solid var(--line); }
 .landing-module summary { list-style: none; display: flex; gap: 20px; align-items: center; min-height: 100px; cursor: pointer; padding: 18px 0; }
@@ -85,6 +119,11 @@
   .landing-page main > section:not(.landing-hero) { padding-top: 28px; margin-bottom: 38px; }
   .landing-preview-grid { grid-template-columns: 1fr; }
   .landing-sample { padding: 20px; }
+  .landing-cases-grid { grid-template-columns: 1fr; }
+  .landing-case { padding: 20px; }
+  .landing-voices-grid { grid-template-columns: 1fr; }
+  .landing-voice-slot { min-height: 80px; }
+  .landing-module-shorttime { display: none; }
   .landing-comparison table { font-size: 12px; }
   .landing-comparison th, .landing-comparison td { padding: 12px 5px; }
   .landing-comparison th:first-child { width: 49%; }

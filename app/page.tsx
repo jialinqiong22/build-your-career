@@ -3,6 +3,9 @@ import PlanCards from "@/components/PlanCards";
 import ModuleCatalog from "@/components/ModuleCatalog";
 import AuthNav from "@/components/AuthNav";
 import ReportPreview from "@/components/ReportPreview";
+import SampleReports from "@/components/SampleReports";
+import TestimonialPlaceholder from "@/components/TestimonialPlaceholder";
+import LandingFaq from "@/components/LandingFaq";
 import authStyles from "@/components/auth.module.css";
 
 export default function Home() {
@@ -23,7 +26,7 @@ export default function Home() {
             <a className="secondary" href="#modules">了解完整测评包含什么</a>
           </div>
           <p className="landing-cta-note">7分钟看结果，不用注册</p>
-          <p className="small landing-trust">本科、硕士在读与应届生 · 原创探索题＋IPIP公开量表 · 结果仅供自我探索参考</p>
+          <p className="small landing-trust">完整版最低¥9.9起 · 本科、硕士在读与应届生 · 原创探索题＋IPIP公开量表 · 结果仅供自我探索参考</p>
         </section>
         <section className="landing-comparison" aria-labelledby="comparison-title">
           <h2 id="comparison-title">从一项开始，也可以看完整的自己。</h2>
@@ -40,17 +43,16 @@ export default function Home() {
         </section>
         <ReportPreview />
         <ModuleCatalog />
+        <SampleReports />
         <section className="landing-free" aria-labelledby="free-title">
           <div><span className="eyebrow">免费体验 / IPIP-50</span><h2 id="free-title">先测一项：你通常怎么做事</h2><p>50道大五人格题，约7分钟，当场看结果，不用注册。</p><p className="small">工作方式是其中一块；价值取舍、方向兴趣与行为证据，需要在完整测评中分别探索。</p></div>
           <Link className="primary" href="/big-five">开始50题免费大五 ↗</Link>
         </section>
         <PlanCards />
+        <TestimonialPlaceholder />
         <section className="landing-faq" aria-labelledby="faq-title">
           <span className="eyebrow">开始之前</span><h2 id="faq-title">你可能还想知道</h2>
-          <details><summary>这是不是又一个网红测评？</summary><p>霍兰德、价值观和九型使用原创探索题，大五采用IPIP公开量表。题库来源、许可和使用边界都列在<Link href="/sources">“测评来源、授权与边界说明”</Link>中。</p></details>
-          <details><summary>报告会不会都是套话？</summary><p>报告使用预先编写的规则与解读句，区分“已有自述证据支持的线索”和“还没验证的假设”，不会只给一个笼统结论。自述信息未经独立核验。</p></details>
-          <details><summary>测完到底有没有用？</summary><p>这不是职业诊断，而是帮你理清已有的信息和还缺的信息。¥9.9版会给出在线结构化小结；选择¥99版时，可以在1对1沟通中进一步把下一步理清楚。</p></details>
-          <details><summary>需要一次做完吗？</summary><p>不需要。主动选择本机保存后，可以分次完成。请在共用设备上谨慎保存；浏览与免费大五不要求注册，付费、兑换、云端保存、历史记录和PDF需要验证身份。</p></details>
+          <LandingFaq />
         </section>
       </main>
       <footer><span>观己 / BUILD YOUR CAREER</span><span><Link href="/privacy">隐私政策</Link> · <Link href="/terms">用户协议</Link></span><span>理解此刻，为下一步保留可能。</span></footer>
