@@ -8,6 +8,7 @@ import {
   uniqueIndex,
   index,
   check,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable(
@@ -67,4 +68,26 @@ export const authLimits = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => [index("auth_rate_limits_expiry_idx").on(table.expiresAt)],
+);
+
+export const emailVerificationCodes = pgTable(
+  "email_verification_codes",
+  {
+    email: varchar("email", { length: 254 }).notNull(),
+    purpose: varchar("purpose", { length: 16 }).notNull(),
+    codeHash: varchar("code_hash", { length: 64 }).notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.email, table.purpose] }),
+    index("email_verification_codes_expiry_idx").on(table.expiresAt),
+    check(
+      "email_verification_codes_purpose",
+      sql`${table.purpose} IN ('register', 'password_reset')`,
+    ),
+  ],
 );

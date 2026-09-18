@@ -8,6 +8,13 @@
       "when": 1788628665177,
       "tag": "0000_zippy_pretty_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789736098451,
+      "tag": "0001_familiar_rhino",
+      "breakpoints": true
     }
   ]
 }

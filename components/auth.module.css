@@ -101,6 +101,14 @@
   margin: 16px 0 12px;
   overflow: hidden;
 }
+.inlineButton {
+  background: transparent;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  padding: 0;
+  font-size: inherit;
+}
 .submit {
   width: 100%;
   margin: 4px 0 8px;

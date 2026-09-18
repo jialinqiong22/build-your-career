@@ -18,8 +18,11 @@ try {
   const limits = await pool.query(
     "DELETE FROM auth_rate_limits WHERE key IN (SELECT key FROM auth_rate_limits WHERE expires_at <= now() LIMIT 1000)",
   );
+  const codes = await pool.query(
+    "DELETE FROM email_verification_codes WHERE (email, purpose) IN (SELECT email, purpose FROM email_verification_codes WHERE expires_at <= now() LIMIT 1000)",
+  );
   console.log(
-    `Removed ${sessions.rowCount} expired sessions and ${limits.rowCount} expired rate-limit entries.`,
+    `Removed ${sessions.rowCount} expired sessions, ${limits.rowCount} expired rate-limit entries and ${codes.rowCount} expired verification codes.`,
   );
 } catch {
   console.error(

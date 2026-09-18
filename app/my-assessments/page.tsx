@@ -18,6 +18,10 @@ export default function MyAssessments() {
   const [error, setError] = useState("");
   const [confirm, setConfirm] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [deleteStage, setDeleteStage] = useState<"idle" | "confirm">("idle");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   useEffect(() => {
     setRecords([]);
     if (!user) return;
@@ -52,6 +56,36 @@ export default function MyAssessments() {
       setError(cause instanceof Error ? cause.message : "删除失败。");
     } finally {
       setBusy(false);
+    }
+  }
+  async function deleteAccount() {
+    if (!deletePassword) {
+      setDeleteError("请输入密码以确认注销。");
+      return;
+    }
+    setDeleteBusy(true);
+    setDeleteError("");
+    try {
+      const response = await fetch("/api/auth/delete-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ password: deletePassword }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok)
+        throw new Error(
+          typeof data?.error === "string"
+            ? data.error
+            : "暂时无法注销账号，请稍后重试。",
+        );
+      window.location.assign("/");
+    } catch (cause) {
+      setDeleteError(
+        cause instanceof Error ? cause.message : "网络连接异常，请稍后重试。",
+      );
+    } finally {
+      setDeleteBusy(false);
     }
   }
   return (
@@ -102,6 +136,65 @@ export default function MyAssessments() {
         ))
       ) : (
         <p>暂未保存云端记录。完成测评时可主动选择保存。</p>
+      )}
+      {user && (
+        <section className="info-box" aria-label="账号与数据">
+          <h2>账号与数据</h2>
+          <p>
+            当前登录：{user.username}。注销账号会立即删除账号本身、全部云端测评记录和相关社交数据，且无法恢复；本机保存的答案不受影响。
+          </p>
+          {deleteStage === "idle" ? (
+            <button type="button" onClick={() => setDeleteStage("confirm")}>
+              注销账号…
+            </button>
+          ) : (
+            <div>
+              <p role="alert">
+                <strong>此操作不可恢复。</strong>
+                请输入登录密码，确认注销 {user.username}：
+              </p>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                aria-label="登录密码"
+                style={{
+                  padding: "11px 12px",
+                  border: "1px solid #b9c4e2",
+                  borderRadius: 3,
+                  maxWidth: 320,
+                }}
+              />
+              {deleteError && (
+                <p role="alert" style={{ color: "#803d2b" }}>
+                  {deleteError}
+                </p>
+              )}
+              <div style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  disabled={deleteBusy || !deletePassword}
+                  onClick={() => void deleteAccount()}
+                >
+                  {deleteBusy ? "正在注销…" : "永久注销账号"}
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteBusy}
+                  onClick={() => {
+                    setDeleteStage("idle");
+                    setDeletePassword("");
+                    setDeleteError("");
+                  }}
+                  style={{ marginLeft: 12 }}
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
       )}
       {error && <p role="alert">{error}</p>}
     </main>

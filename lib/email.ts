@@ -2,6 +2,7 @@ import "server-only";
 
 import { Resend } from "resend";
 import { WelcomeEmail } from "@/emails/WelcomeEmail";
+import { VerificationCodeEmail } from "@/emails/VerificationCodeEmail";
 
 let resend: Resend | undefined;
 
@@ -62,5 +63,52 @@ Build Your Career`,
   });
 
   if (error) throw new Error("Resend rejected the welcome email request");
+  return "sent";
+}
+
+export type VerificationPurpose = "register" | "password_reset";
+
+const VERIFICATION_COPY = {
+  register: {
+    subject: "你的注册验证码｜Build Your Career",
+    intro: "你正在注册 Build Your Career 账号。",
+  },
+  password_reset: {
+    subject: "重置密码验证码｜Build Your Career",
+    intro: "你正在重置 Build Your Career 账号的密码。",
+  },
+} as const;
+
+export async function sendVerificationCodeEmail(
+  userEmail: string,
+  code: string,
+  purpose: VerificationPurpose,
+): Promise<"sent" | "skipped"> {
+  const config = getEmailConfig();
+  if (!config) return "skipped";
+
+  const testRecipient = process.env.RESEND_TEST_TO_EMAIL?.trim();
+  const supportEmail = process.env.SUPPORT_EMAIL?.trim();
+  const copy = VERIFICATION_COPY[purpose];
+
+  const { error } = await config.client.emails.send({
+    from: `小 Build｜Build Your Career <${config.fromEmail}>`,
+    // The override is useful while Resend's onboarding sender is limited to the
+    // account owner's verified email. Remove it after verifying a real domain.
+    to: testRecipient || userEmail,
+    subject: copy.subject,
+    ...(supportEmail ? { replyTo: supportEmail } : {}),
+    react: VerificationCodeEmail({ code, purpose, supportEmail }),
+    text: `${copy.intro}
+
+验证码：${code}
+
+验证码 10 分钟内有效。请不要把验证码告诉任何人。如果这不是你的操作，可以忽略这封邮件。
+
+小 Build
+Build Your Career`,
+  });
+
+  if (error) throw new Error("Resend rejected the verification email request");
   return "sent";
 }

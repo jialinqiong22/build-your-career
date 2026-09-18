@@ -5,11 +5,15 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import styles from "./auth.module.css";
 
-export default function AuthForm({ mode, onSuccess, onModeChange, compact = false }: { mode: "register" | "login"; onSuccess?: (user: {id: number; username: string}) => void; onModeChange?: (mode: "register" | "login") => void; compact?: boolean }) {
+type Mode = "register" | "login";
+
+export default function AuthForm({ mode, onSuccess, onModeChange, compact = false }: { mode: Mode; onSuccess?: (user: {id: number; username: string}) => void; onModeChange?: (mode: Mode) => void; compact?: boolean }) {
   const register = mode === "register";
+  const [step, setStep] = useState<"code" | "details">("code");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [identifier, setIdentifier] = useState("");
+  const [emailCode, setEmailCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [visible, setVisible] = useState(false);
@@ -31,6 +35,65 @@ export default function AuthForm({ mode, onSuccess, onModeChange, compact = fals
     const timer = window.setInterval(tick, 1000);
     return () => window.clearInterval(timer);
   }, [retryUntil]);
+
+  function consumeTurnstile() {
+    setTurnstileToken("");
+    turnstile.current?.reset();
+  }
+
+  function countdownFrom(response: Response) {
+    if (response.status !== 429) return;
+    const retry = response.headers.get("Retry-After");
+    const delay =
+      retry && /^\d+$/.test(retry)
+        ? Number(retry) * 1000
+        : retry
+          ? Date.parse(retry) - Date.now()
+          : 60000;
+    const wait = Number.isFinite(delay) ? Math.max(1000, delay) : 60000;
+    setSeconds(Math.ceil(wait / 1000));
+    setRetryUntil(Date.now() + wait);
+  }
+
+  // Step 1 of registration: prove the mailbox is reachable before collecting credentials.
+  async function sendCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting.current || seconds > 0) return;
+    setError("");
+    submitting.current = true;
+    setPending(true);
+    try {
+      const response = await fetch("/api/auth/verification-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          identifier: email.trim(),
+          purpose: "register",
+          turnstileToken,
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        countdownFrom(response);
+        throw new Error(
+          typeof data?.error === "string"
+            ? data.error
+            : "暂时无法发送验证码，请稍后重试。",
+        );
+      }
+      consumeTurnstile();
+      setStep("details");
+    } catch (cause) {
+      consumeTurnstile();
+      setError(
+        cause instanceof Error ? cause.message : "网络连接异常，请稍后重试。",
+      );
+    } finally {
+      submitting.current = false;
+      setPending(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,10 +117,6 @@ export default function AuthForm({ mode, onSuccess, onModeChange, compact = fals
       setError("两次输入的密码不一致，请重新确认。");
       return;
     }
-    if (register && !turnstileToken) {
-      setError("请先完成人机验证。");
-      return;
-    }
     if (register && !acceptedPolicies) {
       setError("请先阅读并同意隐私政策和用户协议。");
       return;
@@ -74,23 +133,12 @@ export default function AuthForm({ mode, onSuccess, onModeChange, compact = fals
           ...(register ? { username: username.trim() } : {}),
           identifier: account,
           password,
-          ...(register ? { turnstileToken, acceptedPolicies } : {}),
+          ...(register ? { emailCode: emailCode.trim(), acceptedPolicies } : {}),
         }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
-        if (response.status === 429) {
-          const retry = response.headers.get("Retry-After");
-          const delay =
-            retry && /^\d+$/.test(retry)
-              ? Number(retry) * 1000
-              : retry
-                ? Date.parse(retry) - Date.now()
-                : 60000;
-          const wait = Number.isFinite(delay) ? Math.max(1000, delay) : 60000;
-          setSeconds(Math.ceil(wait / 1000));
-          setRetryUntil(Date.now() + wait);
-        }
+        countdownFrom(response);
         throw new Error(
           typeof data?.error === "string"
             ? data.error
@@ -101,10 +149,6 @@ export default function AuthForm({ mode, onSuccess, onModeChange, compact = fals
       if (onSuccess) onSuccess(data.user);
       else window.location.assign("/");
     } catch (cause) {
-      if (register) {
-        setTurnstileToken("");
-        turnstile.current?.reset();
-      }
       setError(
         cause instanceof Error ? cause.message : "网络连接异常，请稍后重试。",
       );
@@ -113,6 +157,45 @@ export default function AuthForm({ mode, onSuccess, onModeChange, compact = fals
       setPending(false);
     }
   }
+
+  const turnstileWidget = turnstileSiteKey ? (
+    <div className={styles.turnstile}>
+      <Turnstile
+        ref={turnstile}
+        siteKey={turnstileSiteKey}
+        onSuccess={(token) => {
+          setTurnstileToken(token);
+          setError("");
+        }}
+        onExpire={() => setTurnstileToken("")}
+        onTimeout={() => setTurnstileToken("")}
+        onError={(code) => {
+          setTurnstileToken("");
+          setError(
+            String(code) === "110200"
+              ? "当前访问域名尚未加入人机验证白名单，请联系管理员。"
+              : "人机验证暂时无法完成，请刷新后重试。",
+          );
+          return true;
+        }}
+        onUnsupported={() => {
+          setTurnstileToken("");
+          setError("当前浏览器无法完成人机验证，请更换浏览器后重试。");
+        }}
+        options={{
+          action: "code",
+          language: "zh-cn",
+          responseField: false,
+          size: "flexible",
+          theme: "light",
+        }}
+      />
+    </div>
+  ) : (
+    <p className={styles.error} role="alert">
+      邮箱验证尚未配置，请稍后再试。
+    </p>
+  );
 
   return (
     <div className={compact ? "" : styles.shell}>
@@ -145,7 +228,7 @@ export default function AuthForm({ mode, onSuccess, onModeChange, compact = fals
             套餐，也不会自动将测评答案或报告保存到云端。
           </p>
           <p>
-            当前邮箱尚未验证；暂不提供验证码登录或密码找回。请使用你自己的邮箱，并妥善保存密码。
+            注册需要邮箱验证码；忘记密码时，可通过「忘记密码」用邮箱验证码重置。请使用你自己的邮箱。
           </p>
         </div>
       </section>}
@@ -157,29 +240,11 @@ export default function AuthForm({ mode, onSuccess, onModeChange, compact = fals
           <span className="eyebrow">
             {register ? "01 / CREATE ACCOUNT" : "02 / SIGN IN"}
           </span>
-          <h2>{register ? "创建账号" : "登录账号"}</h2>
+          <h2>{register ? (step === "code" ? "创建账号" : "创建账号 · 第 2 步") : "登录账号"}</h2>
         </div>
-        <form onSubmit={submit} aria-busy={pending}>
-          <fieldset className={styles.fields} disabled={pending}>
-            {register && (
-              <label className={styles.field}>
-                用户名
-                <input
-                  name="username"
-                  autoComplete="nickname"
-                  required
-                  minLength={2}
-                  maxLength={30}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  aria-describedby="username-help"
-                />
-                <span id="username-help" className={styles.help}>
-                  2–30 个文字、字母、数字、下划线或短横线；用户名须唯一。
-                </span>
-              </label>
-            )}
-            {register ? (
+        {register && step === "code" ? (
+          <form onSubmit={sendCode} aria-busy={pending}>
+            <fieldset className={styles.fields} disabled={pending}>
               <label className={styles.field}>
                 邮箱
                 <input
@@ -192,144 +257,187 @@ export default function AuthForm({ mode, onSuccess, onModeChange, compact = fals
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                 />
-              </label>
-            ) : (
-              <label className={styles.field}>
-                邮箱
-                <input
-                  name="identifier"
-                  type="email"
-                  autoComplete="username"
-                  maxLength={254}
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="you@example.com"
-                />
-              </label>
-            )}
-            <label className={styles.field}>
-              密码
-              <input
-                name="password"
-                type={visible ? "text" : "password"}
-                autoComplete={register ? "new-password" : "current-password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                aria-describedby={register ? "password-help" : undefined}
-              />
-              {register && (
-                <span id="password-help" className={styles.help}>
-                  至少 12 个字符，最多 72 个 UTF-8
-                  字节。中文字符占用更多字节；首尾空格也属于密码。
+                <span className={styles.help}>
+                  我们会向这个邮箱发送 6 位验证码，用于确认邮箱属于你。
                 </span>
-              )}
-            </label>
-            {register && (
-              <label className={styles.field}>
-                再次输入密码
-                <input
-                  name="confirm-password"
-                  type={visible ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                />
               </label>
+            </fieldset>
+            {error && (
+              <p className={styles.error} role="alert">
+                {error}
+              </p>
             )}
-            {register && (
+            {seconds > 0 && (
+              <p className={styles.help} role="status">
+                操作过于频繁，请在 {seconds} 秒后重试。
+              </p>
+            )}
+            {turnstileWidget}
+            <button
+              className={`primary ${styles.submit}`}
+              disabled={pending || seconds > 0 || !turnstileSiteKey || !turnstileToken}
+              type="submit"
+            >
+              {pending ? "正在发送…" : "发送验证码 →"}
+            </button>
+            <p className={styles.help}>
+              发送验证码不会创建账号；验证码 10 分钟内有效。
+            </p>
+          </form>
+        ) : (
+          <form onSubmit={submit} aria-busy={pending}>
+            <fieldset className={styles.fields} disabled={pending}>
+              {register && (
+                <label className={styles.field}>
+                  邮箱验证码
+                  <input
+                    name="email-code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    pattern="\d{6}"
+                    maxLength={6}
+                    required
+                    value={emailCode}
+                    onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="123456"
+                  />
+                  <span className={styles.help}>
+                    已发送至 {email}。{" "}
+                    <button
+                      type="button"
+                      className={styles.inlineButton}
+                      onClick={() => {
+                        setEmailCode("");
+                        setStep("code");
+                      }}
+                    >
+                      返回修改邮箱或重新发送
+                    </button>
+                  </span>
+                </label>
+              )}
+              {register && (
+                <label className={styles.field}>
+                  用户名
+                  <input
+                    name="username"
+                    autoComplete="nickname"
+                    required
+                    minLength={2}
+                    maxLength={30}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    aria-describedby="username-help"
+                  />
+                  <span id="username-help" className={styles.help}>
+                    2–30 个文字、字母、数字、下划线或短横线；用户名须唯一。
+                  </span>
+                </label>
+              )}
+              {!register && (
+                <label className={styles.field}>
+                  邮箱
+                  <input
+                    name="identifier"
+                    type="email"
+                    autoComplete="username"
+                    maxLength={254}
+                    required
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </label>
+              )}
+              <label className={styles.field}>
+                密码
+                <input
+                  name="password"
+                  type={visible ? "text" : "password"}
+                  autoComplete={register ? "new-password" : "current-password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  aria-describedby={register ? "password-help" : undefined}
+                />
+                {register && (
+                  <span id="password-help" className={styles.help}>
+                    至少 12 个字符，最多 72 个 UTF-8
+                    字节。中文字符占用更多字节；首尾空格也属于密码。
+                  </span>
+                )}
+                {!register && (
+                  <span className={styles.help}>
+                    忘记密码？{" "}
+                    <Link href="/forgot-password">用邮箱验证码重置</Link>
+                  </span>
+                )}
+              </label>
+              {register && (
+                <label className={styles.field}>
+                  再次输入密码
+                  <input
+                    name="confirm-password"
+                    type={visible ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                  />
+                </label>
+              )}
+              {register && (
+                <label className={styles.showPassword}>
+                  <input
+                    name="accepted-policies"
+                    type="checkbox"
+                    required
+                    checked={acceptedPolicies}
+                    onChange={(e) => setAcceptedPolicies(e.target.checked)}
+                  />
+                  <span>
+                    我已阅读并同意 <Link href="/privacy" target="_blank">隐私政策</Link> 和{" "}
+                    <Link href="/terms" target="_blank">用户协议</Link>
+                  </span>
+                </label>
+              )}
               <label className={styles.showPassword}>
                 <input
-                  name="accepted-policies"
                   type="checkbox"
-                  required
-                  checked={acceptedPolicies}
-                  onChange={(e) => setAcceptedPolicies(e.target.checked)}
+                  checked={visible}
+                  onChange={(e) => setVisible(e.target.checked)}
                 />
-                <span>
-                  我已阅读并同意 <Link href="/privacy" target="_blank">隐私政策</Link> 和{" "}
-                  <Link href="/terms" target="_blank">用户协议</Link>
-                </span>
+                显示密码
               </label>
-            )}
-            <label className={styles.showPassword}>
-              <input
-                type="checkbox"
-                checked={visible}
-                onChange={(e) => setVisible(e.target.checked)}
-              />
-              显示密码
-            </label>
-          </fieldset>
-          {error && (
-            <p className={styles.error} role="alert">
-              {error}
-            </p>
-          )}
-          {seconds > 0 && (
-            <p className={styles.help} role="status">
-              操作过于频繁，请在 {seconds} 秒后重试。
-            </p>
-          )}
-          {register &&
-            (turnstileSiteKey ? (
-              <div className={styles.turnstile}>
-                <Turnstile
-                  ref={turnstile}
-                  siteKey={turnstileSiteKey}
-                  onSuccess={(token) => {
-                    setTurnstileToken(token);
-                    setError("");
-                  }}
-                  onExpire={() => setTurnstileToken("")}
-                  onTimeout={() => setTurnstileToken("")}
-                  onError={(code) => {
-                    setTurnstileToken("");
-                    setError(
-                      String(code) === "110200"
-                        ? "当前访问域名尚未加入人机验证白名单，请联系管理员。"
-                        : "人机验证暂时无法完成，请刷新后重试。",
-                    );
-                    return true;
-                  }}
-                  onUnsupported={() => {
-                    setTurnstileToken("");
-                    setError("当前浏览器无法完成人机验证，请更换浏览器后重试。");
-                  }}
-                  options={{
-                    action: "register",
-                    language: "zh-cn",
-                    responseField: false,
-                    size: "flexible",
-                    theme: "light",
-                  }}
-                />
-              </div>
-            ) : (
+            </fieldset>
+            {error && (
               <p className={styles.error} role="alert">
-                注册验证尚未配置，请稍后再试。
+                {error}
               </p>
-            ))}
-          <button
-            className={`primary ${styles.submit}`}
-            disabled={
-              pending ||
-              seconds > 0 ||
-              (register &&
-                (!turnstileSiteKey || !turnstileToken || !acceptedPolicies))
-            }
-            type="submit"
-          >
-            {pending ? "正在处理…" : register ? "注册并登录 →" : "登录 →"}
-          </button>
-          <p className={styles.help}>
-            {register
-              ? "注册成功后自动登录。只有主动选择云端保存，才会上传测评记录。"
-              : "登录成功后继续原操作。答案的本机保存设置不会因登录而改变。"}
-          </p>
-        </form>
+            )}
+            {seconds > 0 && (
+              <p className={styles.help} role="status">
+                操作过于频繁，请在 {seconds} 秒后重试。
+              </p>
+            )}
+            <button
+              className={`primary ${styles.submit}`}
+              disabled={
+                pending ||
+                seconds > 0 ||
+                (register && !acceptedPolicies)
+              }
+              type="submit"
+            >
+              {pending ? "正在处理…" : register ? "注册并登录 →" : "登录 →"}
+            </button>
+            <p className={styles.help}>
+              {register
+                ? "注册成功后自动登录。只有主动选择云端保存，才会上传测评记录。"
+                : "登录成功后继续原操作。答案的本机保存设置不会因登录而改变。"}
+            </p>
+          </form>
+        )}
         <p className={styles.switch}>
           {register ? "已经有账号？" : "还没有账号？"}{" "}
           {onModeChange ? <button type="button" onClick={() => onModeChange(register ? "login" : "register")}>{register ? "去登录" : "创建账号"}</button> : <Link href={register ? "/login" : "/register"}>

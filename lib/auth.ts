@@ -1,8 +1,7 @@
 import "server-only";
-import { isIP } from "node:net";
-import { and, eq, gt, lt, sql } from "drizzle-orm";
+import { and, eq, gt, lt } from "drizzle-orm";
 import { getDb, authConfigured } from "./db";
-import { users, sessions, authLimits } from "./db/schema";
+import { users, sessions } from "./db/schema";
 import {
   AuthError,
   normalizeEmail,
@@ -14,83 +13,29 @@ import {
 import {
   hashPassword,
   verifyPassword,
-  privateDigest,
   newSessionToken,
   requestToken,
   sessionCookie,
   SESSION_SECONDS,
 } from "./auth-crypto";
 import { sameOrigin } from "./request-origin";
-import { verifyTurnstile } from "./turnstile";
 import { sendWelcomeEmail } from "./email";
+import {
+  checkVerificationCode,
+  consumeVerificationCode,
+} from "./auth-email";
+import { normalizeVerificationCode } from "./auth-email-crypto";
+import {
+  assertConfigured,
+  digest,
+  errorResponse,
+  rateLimit,
+  requestSource,
+  responseHeaders,
+} from "./auth-helpers";
 
-const responseHeaders = {
-  "Cache-Control": "private, no-store",
-  Vary: "Cookie",
-  "X-Content-Type-Options": "nosniff",
-};
-const digest = (value: string) =>
-  privateDigest(value, process.env.AUTH_SECRET || "");
 // A cached real bcrypt hash equalizes the missing-account path; no account uses this password.
 let dummyHash: Promise<string> | undefined;
-function errorResponse(error: unknown) {
-  if (error instanceof AuthError)
-    return Response.json(
-      { error: error.message },
-      {
-        status: error.status,
-        headers: {
-          ...responseHeaders,
-          ...(error.retryAfter
-            ? { "Retry-After": String(error.retryAfter) }
-            : {}),
-        },
-      },
-    );
-  // Never log database errors, identifiers, passwords, connection strings or session tokens.
-  console.error("Account operation unavailable");
-  return Response.json(
-    { error: "账号服务暂时不可用，请稍后重试。" },
-    { status: 503, headers: responseHeaders },
-  );
-}
-
-function assertConfigured() {
-  if (!authConfigured())
-    throw new AuthError("账号服务尚未配置完成，请稍后再试。", 503);
-}
-
-// Only trust Vercel's overwritten platform header, never arbitrary X-Forwarded-For.
-function requestSource(request: Request) {
-  if (process.env.VERCEL === "1") {
-    const address = request.headers.get("x-vercel-forwarded-for")?.trim();
-    if (address && isIP(address)) return address;
-  }
-  return "shared-untrusted-source";
-}
-
-async function rateLimit(key: string, limit: number, windowSeconds: number) {
-  const db = getDb();
-  const now = new Date();
-  const expires = new Date(now.getTime() + windowSeconds * 1000);
-  const [row] = await db
-    .insert(authLimits)
-    .values({ key: digest(`rate:${key}`), hits: 1, expiresAt: expires })
-    .onConflictDoUpdate({
-      target: authLimits.key,
-      set: {
-        hits: sql`CASE WHEN ${authLimits.expiresAt} <= ${now} THEN 1 ELSE ${authLimits.hits} + 1 END`,
-        expiresAt: sql`CASE WHEN ${authLimits.expiresAt} <= ${now} THEN ${expires} ELSE ${authLimits.expiresAt} END`,
-      },
-    })
-    .returning();
-  if (row.hits > limit)
-    throw new AuthError(
-      "尝试次数过多，请稍后再试。",
-      429,
-      Math.max(1, Math.ceil((row.expiresAt.getTime() - now.getTime()) / 1000)),
-    );
-}
 
 function uniqueViolation(error: unknown): boolean {
   let current = error;
@@ -127,21 +72,11 @@ export async function credentials(
       mode === "register" ? 5 : 10,
       900,
     );
+    let emailCode: string | null = null;
     if (mode === "register") {
       requirePolicyAcceptance(body.acceptedPolicies);
-      const verification = await verifyTurnstile({
-        token: body.turnstileToken,
-        secret: process.env.TURNSTILE_SECRET_KEY,
-        expectedHostname: new URL(request.url).hostname,
-        expectedAction: "register",
-      });
-      if (!verification.ok) {
-        if (verification.reason === "misconfigured")
-          throw new AuthError("注册验证尚未配置，请稍后再试。", 503);
-        if (verification.reason === "unavailable")
-          throw new AuthError("人机验证服务暂时不可用，请稍后重试。", 503);
-        throw new AuthError("人机验证无效或已过期，请重新验证。", 403);
-      }
+      // Bot protection happens at the send-code step; registering proves email ownership.
+      emailCode = normalizeVerificationCode(body.emailCode);
     }
     const db = getDb();
     const token = newSessionToken();
@@ -149,6 +84,7 @@ export async function credentials(
     const expiresAt = new Date(Date.now() + SESSION_SECONDS * 1000);
     let user: { id: number; username: string };
     if (mode === "register") {
+      await checkVerificationCode(db, email, "register", emailCode!);
       const passwordHash = await hashPassword(password);
       try {
         user = await db.transaction(async (tx) => {
@@ -172,6 +108,7 @@ export async function credentials(
             await tx
               .delete(sessions)
               .where(eq(sessions.tokenHash, digest(`session:${oldToken}`)));
+          await consumeVerificationCode(tx, email, "register", emailCode!);
           return created;
         });
       } catch (error) {
