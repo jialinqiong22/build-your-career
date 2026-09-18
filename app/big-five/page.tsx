@@ -4,6 +4,10 @@ import Link from "next/link";
 import BigFiveForm from "@/components/BigFiveForm";
 import BigFiveResults from "@/components/BigFiveResults";
 import PlanCards from "@/components/PlanCards";
+import CloudProgress from "@/components/CloudProgress";
+import ShareCard from "@/components/ShareCard";
+import SocialCompare from "@/components/social/SocialCompare";
+import { validScores } from "@/lib/social-validation";
 import { questions50 } from "@/lib/bigfive/data50";
 import { scoreBigFive } from "@/lib/bigfive/scoring";
 const KEY = "guanjip-ipip50-1";
@@ -13,7 +17,9 @@ export default function FreeBigFive() {
     [result, setResult] = useState(false),
     [save, setSave] = useState(false),
     [ready, setReady] = useState(false),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useState(""),
+    [restoreVersion, setRestoreVersion] = useState(0);
+  const socialScores = Object.fromEntries(scoreBigFive(questions50, answers).map(s => [s.dimension, s.score]));
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
@@ -102,6 +108,11 @@ export default function FreeBigFive() {
             {notice}
           </p>
         )}
+        {started && <CloudProgress kind="free50" payload={{ answers }} onRestore={(value) => {
+          const restored = value.answers;
+          if (!restored || typeof restored !== "object" || Array.isArray(restored) || !Object.entries(restored).every(([id, v]) => questions50.some(q => q.id === id) && (v === null || (typeof v === "number" && Number.isInteger(v) && v >= 1 && v <= 5)))) { throw new Error("云端记录格式不兼容。"); }
+          setAnswers(restored as Record<string, number | null>); setResult(false); setRestoreVersion(v => v + 1);
+        }} />}
         {!started ? (
           <>
             <p className="lead">
@@ -112,7 +123,7 @@ export default function FreeBigFive() {
                 采用公开IPIP-50题目、正反向计分与本项目中文适配。不提供人群排名或心理诊断；约7分钟是体验目标，实际因人而异。
               </p>
               <p>
-                回答仅在浏览器处理。默认关闭页面即丢失；选择本机保存后会保留至你清除。无需注册或付费。
+                默认在浏览器处理，关闭页面即丢失；选择本机保存后会保留至你清除。只有主动选择云端保存才会上传到账号。免费作答无需注册或付费。
               </p>
             </div>
             <label className="checkline">
@@ -155,6 +166,11 @@ export default function FreeBigFive() {
         ) : result ? (
           <>
             <BigFiveResults items={questions50} answers={answers} />
+            <section className="info-box" aria-label="四维探索进度">
+              <h2>你已经完成工作方式这一块</h2>
+              <p>✓ 工作方式已完成 · 方向兴趣、价值取舍、行为证据：待解锁</p>
+              <p>大五结果帮助你了解通常怎么做事。投入哪个方向，还需要看你在意的回报、感兴趣的问题，以及能支持这些判断的真实经历。仅凭这一份结果，还不能下方向结论。</p>
+            </section>
             <div className="report-actions">
               <button className="secondary" onClick={() => setResult(false)}>
                 修改回答
@@ -167,9 +183,12 @@ export default function FreeBigFive() {
               </button>
             </div>
             <PlanCards />
+            <ShareCard scores={scoreBigFive(questions50, answers)} />
+            {validScores(socialScores) && <SocialCompare scores={socialScores} />}
           </>
         ) : (
           <BigFiveForm
+            key={restoreVersion}
             items={questions50}
             answers={answers}
             onChange={setAnswers}

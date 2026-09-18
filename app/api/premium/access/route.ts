@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { sameOrigin } from "@/lib/request-origin";
+import { getCurrentUser } from "@/lib/auth";
+import { authConfigured } from "@/lib/db";
 import {
   createPremiumSession,
   premiumAccessFromRequest,
   premiumConfigured,
   PREMIUM_COOKIE,
+  planForGrant,
+  verifyPremiumToken,
 } from "../../../../lib/premium-access";
 
 export const runtime = "nodejs";
@@ -14,17 +18,23 @@ function reply(body: object, status = 200) {
   return NextResponse.json(body, { status, headers });
 }
 export async function GET(request: Request) {
-  const grant = premiumAccessFromRequest(request);
+  const user = await getCurrentUser(request).catch(() => null);
+  const grant = premiumAccessFromRequest(request, user?.id);
+  const plan = planForGrant(grant);
   return reply({
-    configured: premiumConfigured(),
+    configured: premiumConfigured() && authConfigured(),
     active: Boolean(grant),
+    plan,
+    canPrint: plan === "guided",
     expiresAt: grant ? new Date(grant.exp * 1000).toISOString() : null,
   });
 }
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return reply({ error: "请求来源无效。" }, 403);
-  if (!premiumConfigured())
+  if (!premiumConfigured() || !authConfigured())
     return reply({ error: "兑换服务尚未配置，请联系服务方。" }, 503);
+  const user = await getCurrentUser(request).catch(() => null);
+  if (!user) return reply({ error: "请先登录，再兑换本账号的服务码。" }, 401);
   if (
     !request.headers
       .get("content-type")
@@ -54,15 +64,17 @@ export async function POST(request: Request) {
     const data = JSON.parse(raw);
     if (!data || typeof data.code !== "string" || data.code.length > 1024)
       return reply({ error: "请输入有效兑换码。" }, 400);
-    const session = createPremiumSession(data.code.trim());
+    const session = createPremiumSession(data.code.trim(), user.id);
     if (!session)
       return reply(
-        { error: "兑换码无效、已过期或已撤销，请联系服务方。" },
+        { error: "兑换码无效、已过期、已撤销或不属于当前账号，请联系服务方。" },
         401,
       );
     const response = reply({
       configured: true,
       active: true,
+      plan: planForGrant(verifyPremiumToken(session.token, "session")),
+      canPrint: planForGrant(verifyPremiumToken(session.token, "session")) === "guided",
       expiresAt: new Date(session.expiresAt * 1000).toISOString(),
     });
     response.cookies.set(PREMIUM_COOKIE, session.token, {

@@ -10,11 +10,16 @@ declare global {
 }
 
 const SCRIPT_ID = "crisp-chat-loader";
+const PRIVATE_PATH_PREFIXES = ["/compare/", "/feedback/"];
+
+export function shouldLoadCrisp(pathname: string) {
+  return !PRIVATE_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 export default function CrispChat() {
   useEffect(() => {
     const websiteId = process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID?.trim();
-    if (!websiteId) return;
+    if (!websiteId || !shouldLoadCrisp(window.location.pathname)) return;
 
     window.$crisp ??= [];
     window.CRISP_WEBSITE_ID = websiteId;

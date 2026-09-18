@@ -21,8 +21,7 @@ if (
   throw Error("Missing Neon dev config");
 const db = new Pool({ connectionString: uri.toString(), max: 1 });
 const tag = "test_" + randomBytes(5).toString("hex");
-const email = tag + "@example.test",
-  phone = "+1202555" + String(Math.floor(Math.random() * 100)).padStart(4, "0");
+const email = tag + "@example.test";
 const password = "Synthetic-test-" + randomBytes(12).toString("hex");
 const createdIds = [];
 const digest = (value) =>
@@ -58,7 +57,7 @@ try {
   status(
     await post(
       "/api/auth/register",
-      { username: tag, identifier: email, password },
+      { username: tag, identifier: email, password, acceptedPolicies: true },
       "",
       "https://attacker.invalid",
     ),
@@ -69,6 +68,7 @@ try {
       username: "x",
       identifier: email,
       password,
+      acceptedPolicies: true,
     }),
     400,
   );
@@ -77,6 +77,16 @@ try {
       username: tag,
       identifier: email,
       password: "a".repeat(73),
+      acceptedPolicies: true,
+    }),
+    400,
+  );
+  status(
+    await post("/api/auth/register", {
+      username: tag,
+      identifier: email,
+      password,
+      acceptedPolicies: false,
     }),
     400,
   );
@@ -84,6 +94,7 @@ try {
     username: tag,
     identifier: email.toUpperCase(),
     password,
+    acceptedPolicies: true,
   });
   status(register, 201);
   const registered = await register.json();
@@ -118,6 +129,7 @@ try {
       username: tag + "_2",
       identifier: email,
       password,
+      acceptedPolicies: true,
     }),
     409,
   );
@@ -126,41 +138,35 @@ try {
       username: tag.toUpperCase(),
       identifier: tag + "2@example.test",
       password,
+      acceptedPolicies: true,
     }),
     409,
   );
-  const phoneRegister = await post("/api/auth/register", {
-    username: tag + "_p",
-    identifier: phone,
-    password,
-  });
-  status(phoneRegister, 201);
-  const phoneUser = (await phoneRegister.json()).user;
-  createdIds.push(phoneUser.id);
   status(
     await post("/api/auth/register", {
-      username: tag + "_p2",
-      identifier: phone,
+      username: tag + "_phone",
+      identifier: "+8613800138000",
       password,
+      acceptedPolicies: true,
     }),
-    409,
+    400,
   );
   status(
     await post("/api/auth/login", {
-      identifier: phone,
+      identifier: email,
       password: "wrong-but-long-password",
     }),
     401,
   );
   const login = await post(
     "/api/auth/login",
-    { identifier: phone, password },
+    { identifier: email, password },
     cookie,
   );
   status(login, 200);
   const secondCookie = cookieOf(login);
   assert.notEqual(cookie, secondCookie);
-  assert.equal((await session(secondCookie)).user.id, phoneUser.id);
+  assert.equal((await session(secondCookie)).user.id, registered.user.id);
   assert.equal((await session(cookie)).user, null); // rotated previous session revoked
   status(
     await post(

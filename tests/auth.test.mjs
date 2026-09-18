@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  normalizeIdentifier,
+  normalizeEmail,
   normalizeUsername,
+  requirePolicyAcceptance,
   validatePassword,
   readAuthBody,
 } from "../lib/auth-validation.ts";
@@ -16,10 +17,7 @@ import {
 } from "../lib/auth-crypto.ts";
 
 test("email normalization and malformed inputs", () => {
-  assert.deepEqual(normalizeIdentifier(" Person+Test@Example.COM "), {
-    kind: "email",
-    value: "person+test@example.com",
-  });
+  assert.equal(normalizeEmail(" Person+Test@Example.COM "), "person+test@example.com");
   for (const value of [
     null,
     {},
@@ -31,22 +29,14 @@ test("email normalization and malformed inputs", () => {
     "a b@example.com",
     "a@b.com\nother",
   ])
-    assert.throws(() => normalizeIdentifier(value));
+    assert.throws(() => normalizeEmail(value));
 });
-test("phone canonicalization equates mainland aliases and preserves international prefix", () => {
-  assert.deepEqual(
-    normalizeIdentifier("138 0013 8000"),
-    normalizeIdentifier("+86 13800138000"),
-  );
-  assert.equal(normalizeIdentifier("+1 (202) 555-0123").value, "+12025550123");
-  for (const value of [
-    "123456",
-    "+8612345678901",
-    "00441234567890",
-    "phone",
-    "+01234567890",
-  ])
-    assert.throws(() => normalizeIdentifier(value));
+test("phone-like identifiers are rejected and policy consent must be explicit", () => {
+  for (const value of ["13800138000", "+8613800138000", "+12025550123", "phone"])
+    assert.throws(() => normalizeEmail(value));
+  assert.doesNotThrow(() => requirePolicyAcceptance(true));
+  for (const value of [false, null, undefined, "true", 1])
+    assert.throws(() => requirePolicyAcceptance(value));
 });
 test("username constraints and unicode normalization", () => {
   assert.equal(normalizeUsername(" 观己学生 "), "观己学生");

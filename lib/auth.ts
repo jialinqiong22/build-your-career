@@ -5,8 +5,9 @@ import { getDb, authConfigured } from "./db";
 import { users, sessions, authLimits } from "./db/schema";
 import {
   AuthError,
-  normalizeIdentifier,
+  normalizeEmail,
   normalizeUsername,
+  requirePolicyAcceptance,
   validatePassword,
   readAuthBody,
 } from "./auth-validation";
@@ -117,16 +118,17 @@ export async function credentials(
       900,
     );
     const body = await readAuthBody(request);
-    const identifier = normalizeIdentifier(body.identifier);
+    const email = normalizeEmail(body.identifier);
     const password = validatePassword(body.password);
     const username =
       mode === "register" ? normalizeUsername(body.username) : null;
     await rateLimit(
-      `${mode}:identity:${identifier.kind}:${identifier.value}`,
+      `${mode}:identity:email:${email}`,
       mode === "register" ? 5 : 10,
       900,
     );
     if (mode === "register") {
+      requirePolicyAcceptance(body.acceptedPolicies);
       const verification = await verifyTurnstile({
         token: body.turnstileToken,
         secret: process.env.TURNSTILE_SECRET_KEY,
@@ -155,8 +157,8 @@ export async function credentials(
             .values({
               username: username!,
               password: passwordHash,
-              email: identifier.kind === "email" ? identifier.value : null,
-              phone: identifier.kind === "phone" ? identifier.value : null,
+              email,
+              phone: null,
             })
             .returning({ id: users.id, username: users.username });
           await tx
@@ -175,7 +177,7 @@ export async function credentials(
       } catch (error) {
         if (uniqueViolation(error))
           throw new AuthError(
-            "该用户名或联系方式不可用于注册，请更换或尝试登录。",
+            "该用户名或邮箱不可用于注册，请更换或尝试登录。",
             409,
           );
         throw error;
@@ -188,11 +190,7 @@ export async function credentials(
           password: users.password,
         })
         .from(users)
-        .where(
-          identifier.kind === "email"
-            ? eq(users.email, identifier.value)
-            : eq(users.phone, identifier.value),
-        )
+        .where(eq(users.email, email))
         .limit(1);
       dummyHash ??= hashPassword(newSessionToken());
       const valid = await verifyPassword(
@@ -200,7 +198,7 @@ export async function credentials(
         found?.password || (await dummyHash),
       );
       if (!found || !valid)
-        throw new AuthError("手机号/邮箱或密码不正确。", 401);
+        throw new AuthError("邮箱或密码不正确。", 401);
       user = { id: found.id, username: found.username };
       await db.transaction(async (tx) => {
         await tx
@@ -224,10 +222,10 @@ export async function credentials(
           );
       });
     }
-    if (mode === "register" && identifier.kind === "email") {
+    if (mode === "register") {
       try {
         await sendWelcomeEmail(
-          identifier.value,
+          email,
           user.username,
           new URL(request.url).origin,
         );
@@ -284,6 +282,18 @@ export async function currentSession(request: Request) {
   } catch (error) {
     return errorResponse(error);
   }
+}
+
+/** Validated server session; callers must never accept a client-supplied owner ID. */
+export async function getCurrentUser(request: Request) {
+  if (!authConfigured()) return null;
+  const token = requestToken(request);
+  if (!token) return null;
+  const [user] = await getDb().select({ id: users.id, username: users.username })
+    .from(sessions).innerJoin(users, eq(sessions.userId, users.id))
+    .where(and(eq(sessions.tokenHash, digest(`session:${token}`)), gt(sessions.expiresAt, new Date())))
+    .limit(1);
+  return user || null;
 }
 
 export async function logout(request: Request) {

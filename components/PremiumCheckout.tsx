@@ -1,17 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/components/AuthProvider";
 export default function PremiumCheckout({
   contact,
+  selectedPlan,
 }: {
   contact: string | null;
+  selectedPlan: "standard" | "guided";
 }) {
+  const { requireAuth, user } = useAuth();
   const [code, setCode] = useState(""),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [status, setStatus] = useState<{
       configured: boolean;
       active: boolean;
+      plan: "free" | "standard" | "guided";
       expiresAt?: string | null;
     } | null>(null);
   useEffect(() => {
@@ -19,9 +24,8 @@ export default function PremiumCheckout({
       .then((r) => r.json())
       .then(setStatus)
       .catch(() => setMessage("暂时无法查询兑换服务，请稍后再试。"));
-  }, []);
-  async function redeem(e: React.FormEvent) {
-    e.preventDefault();
+  }, [user]);
+  async function redeem() {
     setBusy(true);
     setMessage("");
     try {
@@ -61,13 +65,11 @@ export default function PremiumCheckout({
     <>
       <div className="report-card">
         <span className="eyebrow">完整定位服务</span>
-        <h1 className="page-title">全套测评 · PDF · 沟通</h1>
-        <p className="price">
-          ¥199 <small>一次套餐服务</small>
-        </p>
-        <p>
-          原创职业价值观40题、霍兰德兴趣探索、大五120题与30项细分特质、潜力证据与成长条件、完整PDF报告及后续沟通。九型原创动机反思为可选补充。沟通方式、时间和安排请购买前确认。
-        </p>
+        <h1 className="page-title">选择适合你的探索深度</h1>
+        <p className="notice">当前了解：{selectedPlan === "standard" ? "¥9.9 完整四维，自己看" : "¥99 完整四维＋一次沟通"}。实际开通权益以兑换码为准。</p>
+        <p><b>免费</b> · 50题大五，约7分钟，无需注册即可查看结果。</p>
+        <p><b>¥9.9 完整四维</b> · 大五50题、职业价值观、霍兰德兴趣、潜力证据与成长条件，在线结构化定位小结。九型为可选补充。</p>
+        <p><b>¥99 深入探索</b> · 包含完整四维，大五升级为120题与30项细分特质，完整PDF报告与一次1对1沟通。沟通方式和时间请购买前确认。</p>
         <div className="receipt-steps">
           <p>
             <b>01 联系确认</b>　确认服务内容、沟通安排与微信/支付宝收款方式。
@@ -78,7 +80,7 @@ export default function PremiumCheckout({
           </p>
           <p>
             <b>03 兑换与测评</b>
-            　输入兑换码，完成全套测评，保存PDF并联系约定沟通。
+            　登录后输入属于你的兑换码，开始对应套餐测评。99元套餐可保存PDF并预约沟通。
           </p>
         </div>
         {contact ? (
@@ -99,7 +101,7 @@ export default function PremiumCheckout({
       </div>
       {status?.active ? (
         <section className="info-box">
-          <h2>套餐访问已激活</h2>
+          <h2>{status.plan === "guided" ? "99元深入探索" : "9.9元完整四维"}已激活</h2>
           <Link className="primary" href="/assessment">
             进入 / 继续完整测评 ↗
           </Link>
@@ -107,11 +109,11 @@ export default function PremiumCheckout({
             退出当前设备
           </button>
           <p className="small">
-            请勿分享兑换码。更换设备或会话到期后可使用有效兑换码重新验证。
+            兑换码绑定购买时确认的账号。更换设备或会话到期后，请登录同一账号重新兑换。
           </p>
         </section>
       ) : (
-        <form className="redeem-form" onSubmit={redeem}>
+        <form className="redeem-form" onSubmit={(e) => { e.preventDefault(); requireAuth(redeem); }}>
           <label className="field-label">
             已有兑换码
             <textarea
@@ -129,10 +131,10 @@ export default function PremiumCheckout({
             className="primary"
             disabled={busy || !code.trim() || !status?.configured}
           >
-            {busy ? "正在验证…" : "兑换199元服务套餐"}
+            {busy ? "正在验证…" : "登录并兑换套餐"}
           </button>
           <p className="small">
-            验证会将兑换码发给本站服务器，并设置仅用于套餐访问的Cookie。兑换码是访问凭证，请妥善保管。
+            验证会将兑换码发给本站服务器，并设置套餐访问Cookie；服务器每次访问都会核对当前账号。请妥善保管兑换码。
           </p>
         </form>
       )}

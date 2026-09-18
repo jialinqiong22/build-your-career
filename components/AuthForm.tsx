@@ -5,12 +5,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import styles from "./auth.module.css";
 
-export default function AuthForm({ mode }: { mode: "register" | "login" }) {
+export default function AuthForm({ mode, onSuccess, onModeChange, compact = false }: { mode: "register" | "login"; onSuccess?: (user: {id: number; username: string}) => void; onModeChange?: (mode: "register" | "login") => void; compact?: boolean }) {
   const register = mode === "register";
-  const [kind, setKind] = useState<"email" | "phone">("email");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -20,6 +18,7 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
   const [retryUntil, setRetryUntil] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const submitting = useRef(false);
   const turnstile = useRef<TurnstileInstance>(null);
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -59,9 +58,11 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
       setError("请先完成人机验证。");
       return;
     }
-    const account = (
-      register ? (kind === "email" ? email : phone) : identifier
-    ).trim();
+    if (register && !acceptedPolicies) {
+      setError("请先阅读并同意隐私政策和用户协议。");
+      return;
+    }
+    const account = (register ? email : identifier).trim();
     submitting.current = true;
     setPending(true);
     try {
@@ -73,7 +74,7 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
           ...(register ? { username: username.trim() } : {}),
           identifier: account,
           password,
-          ...(register ? { turnstileToken } : {}),
+          ...(register ? { turnstileToken, acceptedPolicies } : {}),
         }),
       });
       const data = await response.json().catch(() => null);
@@ -97,7 +98,8 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
         );
       }
       if (!data?.user) throw new Error("未能确认登录状态，请重新登录。");
-      window.location.assign("/");
+      if (onSuccess) onSuccess(data.user);
+      else window.location.assign("/");
     } catch (cause) {
       if (register) {
         setTurnstileToken("");
@@ -113,8 +115,8 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
   }
 
   return (
-    <div className={styles.shell}>
-      <section className={styles.intro} aria-labelledby="auth-title">
+    <div className={compact ? "" : styles.shell}>
+      {!compact && <section className={styles.intro} aria-labelledby="auth-title">
         <span className="eyebrow">YOUR NEXT CHAPTER / 观己账号</span>
         <h1 id="auth-title">
           {register ? (
@@ -133,20 +135,20 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
         </h1>
         <p>
           {register
-            ? "选择邮箱或手机号，创建属于你的账号。"
-            : "使用注册时填写的邮箱或手机号与密码登录。"}
+            ? "使用邮箱和密码，创建属于你的账号。"
+            : "使用注册邮箱与密码登录。"}
         </p>
         <div className={styles.boundary}>
           <span className="eyebrow">关于这个账号</span>
           <p>
-            账号用于身份登录，不代表已购买 ¥199
+            账号用于身份登录，不代表已购买付费
             套餐，也不会自动将测评答案或报告保存到云端。
           </p>
           <p>
-            当前邮箱和手机号尚未验证；暂不提供验证码登录或密码找回。请使用你自己的联系方式，并妥善保存密码。
+            当前邮箱尚未验证；暂不提供验证码登录或密码找回。请使用你自己的邮箱，并妥善保存密码。
           </p>
         </div>
-      </section>
+      </section>}
       <section
         className={styles.card}
         aria-label={register ? "创建账号表单" : "登录表单"}
@@ -178,81 +180,32 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
               </label>
             )}
             {register ? (
-              <>
-                <fieldset className={styles.method}>
-                  <legend>注册方式（二选一）</legend>
-                  <label>
-                    <input
-                      type="radio"
-                      name="contact-kind"
-                      value="email"
-                      checked={kind === "email"}
-                      onChange={() => setKind("email")}
-                    />
-                    邮箱
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="contact-kind"
-                      value="phone"
-                      checked={kind === "phone"}
-                      onChange={() => setKind("phone")}
-                    />
-                    手机号
-                  </label>
-                </fieldset>
-                {kind === "email" ? (
-                  <label className={styles.field}>
-                    邮箱
-                    <input
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      maxLength={254}
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                    />
-                  </label>
-                ) : (
-                  <label className={styles.field}>
-                    手机号
-                    <input
-                      name="phone"
-                      type="tel"
-                      autoComplete="tel"
-                      maxLength={20}
-                      required
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      aria-describedby="phone-help"
-                      placeholder="13800138000 或 +8613800138000"
-                    />
-                    <span id="phone-help" className={styles.help}>
-                      中国大陆可直接填写 11 位手机号；其他地区请填写
-                      +国家码及完整号码。
-                    </span>
-                  </label>
-                )}
-              </>
+              <label className={styles.field}>
+                邮箱
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  maxLength={254}
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </label>
             ) : (
               <label className={styles.field}>
-                邮箱或手机号
+                邮箱
                 <input
                   name="identifier"
+                  type="email"
                   autoComplete="username"
                   maxLength={254}
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  aria-describedby="identifier-help"
+                  placeholder="you@example.com"
                 />
-                <span id="identifier-help" className={styles.help}>
-                  使用注册时的联系方式，不是用户名。大陆手机号可输入 11
-                  位，其他地区请带 +国家码。
-                </span>
               </label>
             )}
             <label className={styles.field}>
@@ -284,6 +237,21 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                 />
+              </label>
+            )}
+            {register && (
+              <label className={styles.showPassword}>
+                <input
+                  name="accepted-policies"
+                  type="checkbox"
+                  required
+                  checked={acceptedPolicies}
+                  onChange={(e) => setAcceptedPolicies(e.target.checked)}
+                />
+                <span>
+                  我已阅读并同意 <Link href="/privacy" target="_blank">隐私政策</Link> 和{" "}
+                  <Link href="/terms" target="_blank">用户协议</Link>
+                </span>
               </label>
             )}
             <label className={styles.showPassword}>
@@ -349,7 +317,8 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
             disabled={
               pending ||
               seconds > 0 ||
-              (register && (!turnstileSiteKey || !turnstileToken))
+              (register &&
+                (!turnstileSiteKey || !turnstileToken || !acceptedPolicies))
             }
             type="submit"
           >
@@ -357,15 +326,15 @@ export default function AuthForm({ mode }: { mode: "register" | "login" }) {
           </button>
           <p className={styles.help}>
             {register
-              ? "注册成功后自动登录并返回首页。账号资料会存储在 Neon 数据库中，密码仅以 bcrypt 哈希形式存储。"
-              : "登录成功后返回首页。答案的本机保存设置不会因登录而改变。"}
+              ? "注册成功后自动登录。只有主动选择云端保存，才会上传测评记录。"
+              : "登录成功后继续原操作。答案的本机保存设置不会因登录而改变。"}
           </p>
         </form>
         <p className={styles.switch}>
           {register ? "已经有账号？" : "还没有账号？"}{" "}
-          <Link href={register ? "/login" : "/register"}>
+          {onModeChange ? <button type="button" onClick={() => onModeChange(register ? "login" : "register")}>{register ? "去登录" : "创建账号"}</button> : <Link href={register ? "/login" : "/register"}>
             {register ? "去登录" : "创建账号"}
-          </Link>
+          </Link>}
         </p>
       </section>
     </div>

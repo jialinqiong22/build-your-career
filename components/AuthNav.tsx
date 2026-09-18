@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "./auth.module.css";
+import { useAuth } from "./AuthProvider";
 
 export default function AuthNav() {
+  const { requireAuth, user: sharedUser } = useAuth();
   const [user, setUser] = useState<{ id: number; username: string } | null>(
     null,
   );
@@ -27,6 +29,7 @@ export default function AuthNav() {
       });
     return () => controller.abort();
   }, []);
+  useEffect(() => { setUser(sharedUser); }, [sharedUser]);
 
   async function logout() {
     if (pending) return;
@@ -55,16 +58,15 @@ export default function AuthNav() {
           <span className={styles.username} title={user.username}>
             你好，{user.username}
           </span>
+          <Link href="/my-assessments">我的测评</Link>
           <button type="button" onClick={logout} disabled={pending}>
             {pending ? "正在退出…" : "退出登录"}
           </button>
         </>
       ) : (
         <>
-          <Link href="/login">登录</Link>
-          <Link className={styles.registerLink} href="/register">
-            注册
-          </Link>
+          <button type="button" onClick={() => requireAuth(() => {})}>登录 / 注册</button>
+          <button type="button" onClick={() => requireAuth(() => { window.location.assign("/my-assessments"); })}>我的测评</button>
         </>
       )}
       {error && (

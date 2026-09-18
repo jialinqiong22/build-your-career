@@ -28,7 +28,7 @@ export default function ModuleCatalog() {
       tag: "基础 03",
       count: "免费50题 / 进阶120题",
       time: "50题约7分钟；120题约15–22分钟",
-      meaning: "展现开放性、尽责性、外向性、宜人性与情绪敏感性。",
+      meaning: "展现开放性、尽责性、外向性、宜人性与情绪稳定性。",
       strength: "理解组织、协作、应对变化的偏好；高低各有适用情境。",
       note: "120题提供30项细分特质，不是给50题简单追加70题。",
     },
@@ -52,30 +52,33 @@ export default function ModuleCatalog() {
     },
   ];
   return (
-    <section className="module-catalog" aria-label="五个测评模块">
+    <section className="module-catalog" id="modules" aria-label="四个核心维度与可选动机补充">
       <div className="section-label">先知道测什么，再开始</div>
+      <h2>四个核心维度，一项可选补充。</h2>
+      <p>根据所选版本，约35–60分钟梳理自己现在的位置。详情可以逐项展开。</p>
       {modules.map((m, i) => (
-        <article className="module-row" key={m.name}>
-          <div>
+        <details className="landing-module" key={m.name}>
+          <summary>
+            <span className="landing-module-number" aria-hidden="true">0{i + 1}</span>
+            <span>
             <span className="eyebrow">{m.tag}</span>
-            <h2>{m.name}</h2>
+            <span className="landing-module-name">{m.name}</span>
+            </span>
+            <span className="landing-expand"><span className="when-closed">展开看详情</span><span className="when-open">收起详情</span><span aria-hidden="true"> ＋</span></span>
+          </summary>
+          <div className="landing-module-detail">
             <p className="module-time">
               {m.count}
               <br />
               {m.time}
             </p>
-          </div>
-          <div>
             <h3>它展现了什么</h3>
             <p>{m.meaning}</p>
             <h3>可以如何帮助你</h3>
             <p>{m.strength}</p>
             <p className="small">{m.note}</p>
           </div>
-          <span className="module-number" aria-hidden="true">
-            0{i + 1}
-          </span>
-        </article>
+        </details>
       ))}
       <p className="small">
         以上均为阅读与作答估算，尚待学生试测校准，不是完成时限。基础完整流程预计约

@@ -1,4 +1,6 @@
-import { premiumAccessFromRequest } from "@/lib/premium-access";
+import { premiumAccessFromRequest, planForGrant } from "@/lib/premium-access";
+import { getCurrentUser } from "@/lib/auth";
+import { questions50 } from "@/lib/bigfive/data50";
 import { sameOrigin } from "@/lib/request-origin";
 import { questions120 } from "@/lib/bigfive/data120";
 import { validProfile, finished, report } from "@/lib/positioning";
@@ -9,7 +11,9 @@ const headers = { "Cache-Control": "private, no-store" };
 export async function POST(request: Request) {
   if (!sameOrigin(request))
     return Response.json({ error: "请求来源无效。" }, { status: 403, headers });
-  if (!premiumAccessFromRequest(request))
+  const user = await getCurrentUser(request).catch(() => null);
+  const grant = premiumAccessFromRequest(request, user?.id);
+  if (!grant)
     return Response.json(
       { error: "兑换状态已失效，请重新兑换。" },
       { status: 403, headers },
@@ -33,13 +37,16 @@ export async function POST(request: Request) {
       chunks.push(value);
     }
     const p = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-    const banks = { bigFive: questions120, enneagram: enneagramQuestions };
+    const plan = planForGrant(grant);
+    if (new URL(request.url).searchParams.get("format") === "pdf" && plan !== "guided")
+      return Response.json({ error: "PDF 为 99 元套餐权益。" }, { status: 403, headers });
+    const banks = { bigFive: plan === "guided" ? questions120 : questions50, enneagram: enneagramQuestions };
     if (!validProfile(p, banks) || !finished(p, banks))
       return Response.json(
         { error: "题库版本或回答不完整，请检查。" },
         { status: 400, headers },
       );
-    return Response.json({ report: report(p, banks) }, { headers });
+    return Response.json({ report: report(p, banks), plan, canPrint: plan === "guided" }, { headers });
   } catch {
     return Response.json(
       { error: "报告数据格式无效。" },

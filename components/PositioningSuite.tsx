@@ -19,6 +19,8 @@ import { hollandQuestions } from "@/lib/instruments";
 import Questionnaire from "./Questionnaire";
 import EvidenceForm from "./EvidenceForm";
 import SuiteReport from "./SuiteReport";
+import { useAuth } from "./AuthProvider";
+import CloudProgress from "./CloudProgress";
 const titles = [
   "开始之前",
   "职业价值观",
@@ -34,6 +36,8 @@ export default function PositioningSuite({
   previewBanks?: SuiteBanks;
 }) {
   const preview = Boolean(previewBanks);
+  const { requireAuth } = useAuth();
+  const [canPrint, setCanPrint] = useState(preview);
   const generation = useRef(0);
   const pending = useRef<AbortController | null>(null);
   useEffect(
@@ -56,6 +60,7 @@ export default function PositioningSuite({
     [result, setResult] = useState<ReturnType<typeof report> | null>(null),
     [revision, setRevision] = useState(0),
     [expired, setExpired] = useState(false);
+  const storageKey = banks?.bigFive.length === 50 ? `${KEY}-standard50` : KEY;
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -64,14 +69,15 @@ export default function PositioningSuite({
           previewBanks ??
           (await fetch("/api/premium/bank", { cache: "no-store" }).then(
             async (r) => {
-              if (!r.ok) throw Error("请先兑换199元套餐，再进入完整测评。");
+              if (!r.ok) throw Error("请登录并兑换完整测评权益，再进入测评。");
               return r.json();
             },
           ));
         if (cancelled) return;
         setBanks(b);
+        setCanPrint(preview || b.canPrint === true);
         try {
-          const raw = localStorage.getItem(KEY);
+          const raw = localStorage.getItem(b.bigFive.length === 50 ? `${KEY}-standard50` : KEY);
           if (raw) {
             const stored = JSON.parse(raw);
             if (validProfile(stored, b)) {
@@ -99,15 +105,15 @@ export default function PositioningSuite({
     return () => {
       cancelled = true;
     };
-  }, [previewBanks]);
+  }, [previewBanks, preview]);
   useEffect(() => {
     if (!ready || !save || !banks) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify(p));
+      localStorage.setItem(storageKey, JSON.stringify(p));
     } catch {
       setNotice("本机保存失败，请保持页面开启并及时导出。");
     }
-  }, [p, ready, save, banks]);
+  }, [p, ready, save, banks, storageKey]);
   function change(next: Profile) {
     cancelGeneration();
     setP(next);
@@ -128,7 +134,7 @@ export default function PositioningSuite({
     if (!confirm("清除本次V4测评及本机V4记录？旧版与免费大五记录不受影响。"))
       return;
     try {
-      localStorage.removeItem(KEY);
+      localStorage.removeItem(storageKey);
     } catch {
       setNotice("删除失败，请在浏览器设置清除此站点数据。");
       return;
@@ -143,7 +149,7 @@ export default function PositioningSuite({
   function toggleSave(checked: boolean) {
     if (!checked) {
       try {
-        localStorage.removeItem(KEY);
+        localStorage.removeItem(storageKey);
       } catch {
         setNotice("无法删除本机记录，请清除网站数据。");
         return;
@@ -204,18 +210,22 @@ export default function PositioningSuite({
     }
   }
   async function print() {
+    const printRevision = generation.current;
     try {
       if (!preview) {
-        const response = await fetch("/api/premium/access", {
-          cache: "no-store",
+        const response = await fetch("/api/premium/report?format=pdf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(p),
         });
         const data = await response.json();
-        if (!data.active) {
+        if (!response.ok || !data.canPrint) {
           setExpired(true);
-          setNotice("访问已到期，请重新兑换；回答仍在当前页面。");
+          setNotice("PDF需要有效的99元套餐权益；回答仍在当前页面。");
           return;
         }
       }
+      if (printRevision !== generation.current) return;
       window.print();
       setExpired(false);
     } catch {
@@ -249,6 +259,7 @@ export default function PositioningSuite({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   const done = banks ? completion(p, banks) : [];
+  const moduleCounts = banks ? [valueQuestions, hollandQuestions, banks.bigFive].map(items => ({ answered: items.filter(q => Object.hasOwn(p.answers, q.id)).length, total: items.length })) : [];
   return (
     <>
       <header className="site-header">
@@ -268,6 +279,10 @@ export default function PositioningSuite({
             {notice}
           </p>
         )}
+        {banks && !preview && <CloudProgress kind={banks.bigFive.length === 50 ? "suite50" : "suite120"} payload={p} onRestore={(value) => {
+          if (!validProfile(value, banks)) { throw new Error("云端记录与当前题库不兼容。"); }
+          change(value); setConsent(false); navigate(0); setNotice("云端记录已载入，请确认数据处理说明后继续。");
+        }} />}
         {expired && (
           <p className="notice">
             <Link href="/premium" target="_blank">
@@ -293,9 +308,9 @@ export default function PositioningSuite({
           <>
             <SuiteReport profile={p} banks={banks} result={result} />
             <div className="report-actions">
-              <button className="primary" onClick={print}>
+              {canPrint ? <button className="primary" onClick={() => preview ? void print() : requireAuth(print)}>
                 打印 / 保存 PDF
-              </button>
+              </button> : <Link className="secondary" href="/premium?plan=guided">了解99元 PDF＋沟通权益</Link>}
               <button className="secondary" onClick={exportData}>
                 导出我的数据
               </button>
@@ -332,6 +347,9 @@ export default function PositioningSuite({
                       {i === 0 ? "开始" : done[i - 1] ? "✓" : `0${i}`}
                     </span>
                     {title}
+                    {i > 0 && <small style={{ display: "block" }}>
+                      {i === 5 && p.enneagramChoice === "skip" ? "可选 · 已跳过" : done[i - 1] ? "已完成" : i <= 3 ? `${moduleCounts[i - 1]?.answered ? "进行中" : "未开始"} ${moduleCounts[i - 1]?.answered}/${moduleCounts[i - 1]?.total}` : i === 4 ? `${p.evidence.some(e => e.status !== "unanswered") ? "进行中" : "未开始"} ${p.evidence.filter(e => e.status !== "unanswered").length}/${p.evidence.length}` : p.enneagramChoice === "take" ? `进行中 ${Object.keys(p.enneagramAnswers).length}/${banks.enneagram.length}` : "可选 · 未开始"}
+                    </small>}
                   </button>
                 ))}
               </nav>
@@ -352,13 +370,12 @@ export default function PositioningSuite({
                   <div className="info-box">
                     <p>
                       原创职业价值观40题、霍兰德{hollandQuestions.length}
-                      题、大五120题、五类经历记录，以及可选九型
+                      题、大五{banks.bigFive.length}题、五类经历记录，以及可选九型
                       {banks.enneagram.length}
                       题。请分次完成，完整套餐不是七分钟测试。
                     </p>
                     <p>
-                      生成正式报告时，回答会提交本站服务器用于校验和计算，不写入应用数据库。默认仅页面暂存，选择本机保存后保留至你清除。套餐凭证使用HttpOnly
-                      Cookie。报告由你决定是否分享。
+                      生成报告时，回答会提交本站服务器用于校验和计算。默认仅页面暂存；选择本机保存后保留至你清除；主动选择云端保存时才写入账号数据库。报告由你决定是否分享。
                     </p>
                     <p>
                       题目可选无法判断；证据分档只描述填写完整度，不测谎、不评价学历或个人能力。
@@ -428,7 +445,7 @@ export default function PositioningSuite({
                     <button
                       className="secondary"
                       disabled={busy || !consent}
-                      onClick={generate}
+                      onClick={() => preview ? void generate() : requireAuth(generate)}
                     >
                       查看 / 更新完整报告
                     </button>
@@ -532,7 +549,7 @@ export default function PositioningSuite({
               {step === 3 && (
                 <>
                   <p className="lead">
-                    回想通常的自己，而不是理想中的自己。此模块独立于免费50题，需要重新作答。
+                    回想通常的自己，而不是理想中的自己。{banks.bigFive.length === 120 ? "此模块独立于免费50题，需要重新作答。" : "本套餐使用50题大五。"}
                   </p>
                   <Questionnaire
                     key={`bigfive-${revision}`}
@@ -605,7 +622,7 @@ export default function PositioningSuite({
                         change({ ...p, enneagramAnswers })
                       }
                       labels={fit}
-                      onComplete={generate}
+                      onComplete={() => preview ? void generate() : requireAuth(generate)}
                     />
                   )}
                   <div className="info-box">
@@ -620,7 +637,7 @@ export default function PositioningSuite({
                     <button
                       className="primary"
                       disabled={busy || !done.every(Boolean)}
-                      onClick={generate}
+                      onClick={() => preview ? void generate() : requireAuth(generate)}
                     >
                       {busy ? "正在生成…" : "生成完整个人画像"}
                     </button>

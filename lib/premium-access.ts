@@ -3,13 +3,18 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 export const PREMIUM_PRODUCT = "career-complete-199";
 export const PREMIUM_COOKIE = "career_premium_access";
 export const SESSION_SECONDS = 24 * 60 * 60;
+export type PaidPlan = "standard" | "guided";
 export type PremiumGrant = {
-  v: 1;
+  v: 1 | 2;
   kind: "code" | "session";
   order: string;
-  product: typeof PREMIUM_PRODUCT;
+  product: typeof PREMIUM_PRODUCT | "career-standard-9.9" | "career-guided-99";
   exp: number;
+  userId?: number;
 };
+export function planForGrant(grant: PremiumGrant | null): "free" | PaidPlan {
+  return !grant ? "free" : grant.product === "career-standard-9.9" ? "standard" : "guided";
+}
 
 function secret(): string {
   const value = process.env.PREMIUM_ACCESS_SECRET;
@@ -29,10 +34,11 @@ function validGrant(value: unknown): value is PremiumGrant {
   if (!value || typeof value !== "object") return false;
   const grant = value as PremiumGrant;
   return (
-    Object.keys(grant).sort().join(",") === "exp,kind,order,product,v" &&
-    grant.v === 1 &&
+    ((grant.v === 1 && Object.keys(grant).sort().join(",") === "exp,kind,order,product,v" && grant.product === PREMIUM_PRODUCT) ||
+      (grant.v === 2 && Object.keys(grant).sort().join(",") === "exp,kind,order,product,userId,v" &&
+       Number.isSafeInteger(grant.userId) && grant.userId! > 0 &&
+       [PREMIUM_PRODUCT, "career-standard-9.9", "career-guided-99"].includes(grant.product))) &&
     (grant.kind === "code" || grant.kind === "session") &&
-    grant.product === PREMIUM_PRODUCT &&
     typeof grant.order === "string" &&
     /^[A-Za-z0-9_-]{1,80}$/.test(grant.order) &&
     Number.isSafeInteger(grant.exp) &&
@@ -54,13 +60,16 @@ export function issueAccessCode(
   order: string,
   expiresAt: number,
   now = Math.floor(Date.now() / 1000),
+  userId?: number,
+  plan: PaidPlan = "guided",
 ): string {
   const grant: PremiumGrant = {
-    v: 1,
+    v: userId === undefined ? 1 : 2,
     kind: "code",
     order,
-    product: PREMIUM_PRODUCT,
+    product: userId === undefined ? PREMIUM_PRODUCT : plan === "standard" ? "career-standard-9.9" : "career-guided-99",
     exp: expiresAt,
+    ...(userId === undefined ? {} : { userId }),
   };
   if (!validGrant(grant) || expiresAt <= now || revoked(order))
     throw new Error("Invalid order or expiry");
@@ -106,13 +115,14 @@ export function verifyPremiumToken(
 }
 export function createPremiumSession(
   code: string,
+  userId: number,
   now = Math.floor(Date.now() / 1000),
 ): { token: string; expiresAt: number; maxAge: number } | null {
   const grant = verifyPremiumToken(code, "code", now);
-  if (!grant) return null;
+  if (!grant || !ownsGrant(grant, userId)) return null;
   const expiresAt = Math.min(grant.exp, now + SESSION_SECONDS);
   return {
-    token: sign({ ...grant, kind: "session", exp: expiresAt }),
+    token: sign({ ...grant, v: 2, userId, kind: "session", exp: expiresAt }),
     expiresAt,
     maxAge: expiresAt - now,
   };
@@ -120,14 +130,26 @@ export function createPremiumSession(
 /** Use in every protected API; never trust a client-side paid flag. */
 export function premiumAccessFromRequest(
   request: Request,
+  userId?: number,
 ): PremiumGrant | null {
   const cookie = request.headers
     .get("cookie")
     ?.split(";")
     .map((value) => value.trim())
     .find((value) => value.startsWith(`${PREMIUM_COOKIE}=`));
-  return verifyPremiumToken(
+  const grant = verifyPremiumToken(
     cookie?.slice(PREMIUM_COOKIE.length + 1),
     "session",
   );
+  return grant && ownsGrant(grant, userId) ? grant : null;
+}
+// Old orders require an explicit owner assignment before being upgraded. Never
+// let an unbound bearer code become claimable by a second logged-in account.
+function ownsGrant(grant: PremiumGrant, userId: number | undefined): boolean {
+  if (!Number.isSafeInteger(userId) || !userId || userId < 1) return false;
+  if (grant.v === 2) return grant.userId === userId;
+  try {
+    const owners = JSON.parse(process.env.PREMIUM_LEGACY_ORDER_OWNERS || "{}");
+    return Object.hasOwn(owners, grant.order) && owners[grant.order] === userId;
+  } catch { return false; }
 }

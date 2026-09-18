@@ -17,13 +17,22 @@ assert.equal(
   ).status,
   403,
 );
+const authCookie = process.env.SMOKE_AUTH_COOKIE;
+const userId = Number(process.env.SMOKE_USER_ID);
+if (!authCookie || !Number.isSafeInteger(userId) || userId < 1) {
+  console.log("PASS anonymous denial. Authenticated integration SKIPPED: set local test SMOKE_AUTH_COOKIE and SMOKE_USER_ID.");
+  process.exit(0);
+}
 const code = issueAccessCode(
   "LOCAL_SMOKE",
   Math.floor(Date.now() / 1000) + 3600,
+  Math.floor(Date.now() / 1000),
+  userId,
+  "guided",
 );
 const post = (body, extra = {}) => ({
   method: "POST",
-  headers: { origin, "Content-Type": "application/json", ...extra },
+  headers: { origin, "Content-Type": "application/json", cookie: authCookie, ...extra },
   body: JSON.stringify(body),
 });
 assert.equal(
@@ -41,7 +50,7 @@ assert.equal(
 );
 const redeemed = await request("/api/premium/access", post({ code }));
 assert.equal(redeemed.status, 200);
-const cookie = redeemed.headers.get("set-cookie").split(";")[0];
+const cookie = authCookie + "; " + redeemed.headers.get("set-cookie").split(";")[0];
 assert.match(redeemed.headers.get("set-cookie"), /HttpOnly/i);
 const access = await (
   await request("/api/premium/access", { headers: { cookie } })

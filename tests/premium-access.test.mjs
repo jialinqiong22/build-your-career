@@ -10,6 +10,7 @@ import {
   premiumAccessFromRequest,
   PREMIUM_COOKIE,
   SESSION_SECONDS,
+  planForGrant,
 } from "../lib/premium-access.ts";
 
 test("signed manual access grants enforce scope, expiry, revocation and bounded sessions", () => {
@@ -26,14 +27,15 @@ test("signed manual access grants enforce scope, expiry, revocation and bounded 
     process.env.PREMIUM_ACCESS_SECRET = randomBytes(32).toString("hex");
     delete process.env.PREMIUM_REVOKED_ORDERS;
     const now = Math.floor(Date.now() / 1000);
-    const code = issueAccessCode("ORDER_001", now + SESSION_SECONDS * 3, now);
+    const code = issueAccessCode("ORDER_001", now + SESSION_SECONDS * 3, now, 42, "guided");
     assert.equal(verifyPremiumToken(code, "code", now).order, "ORDER_001");
     assert.equal(verifyPremiumToken(code, "session", now), null);
     assert.equal(
       verifyPremiumToken(code, "code", now + SESSION_SECONDS * 3),
       null,
     );
-    const session = createPremiumSession(code, now);
+    const session = createPremiumSession(code, 42, now);
+    assert.equal(createPremiumSession(code, 43, now), null);
     assert.equal(session.maxAge, SESSION_SECONDS);
     assert.equal(verifyPremiumToken(session.token, "code", now), null);
     assert.ok(verifyPremiumToken(session.token, "session", now));
@@ -42,13 +44,19 @@ test("signed manual access grants enforce scope, expiry, revocation and bounded 
       null,
     );
     assert.equal(
-      createPremiumSession(issueAccessCode("SOON", now + 20, now), now).maxAge,
+      createPremiumSession(issueAccessCode("SOON", now + 20, now, 42), 42, now).maxAge,
       20,
     );
     const request = new Request("https://example.test/api", {
       headers: { cookie: `${PREMIUM_COOKIE}=${session.token}` },
     });
-    assert.equal(premiumAccessFromRequest(request).order, "ORDER_001");
+    assert.equal(premiumAccessFromRequest(request, 42).order, "ORDER_001");
+    assert.equal(premiumAccessFromRequest(request), null);
+    assert.equal(premiumAccessFromRequest(request, 43), null);
+    assert.equal(planForGrant(premiumAccessFromRequest(request, 42)), "guided");
+    const standard = issueAccessCode("STANDARD", now + 100, now, 42, "standard");
+    assert.equal(planForGrant(verifyPremiumToken(standard, "code", now)), "standard");
+    assert.equal(planForGrant(null), "free");
     for (const token of [
       "",
       "bad",
@@ -118,6 +126,7 @@ test("issuer rejects missing timezone and impossible dates without outputting a 
         "TEST",
         "--expires",
         expiry,
+        "--user", "42", "--plan", "standard",
       ],
       {
         encoding: "utf8",
@@ -129,5 +138,29 @@ test("issuer rejects missing timezone and impossible dates without outputting a 
     );
     assert.equal(run.status, 1);
     assert.equal(run.stdout, "");
+  }
+});
+
+test("legacy orders need explicit ownership before redemption or cookie use", () => {
+  const oldSecret = process.env.PREMIUM_ACCESS_SECRET;
+  const oldOwners = process.env.PREMIUM_LEGACY_ORDER_OWNERS;
+  try {
+    process.env.PREMIUM_ACCESS_SECRET = randomBytes(32).toString("hex");
+    delete process.env.PREMIUM_LEGACY_ORDER_OWNERS;
+    const now = Math.floor(Date.now() / 1000);
+    const code = issueAccessCode("LEGACY", now + 100, now);
+    assert.ok(verifyPremiumToken(code, "code", now));
+    assert.equal(createPremiumSession(code, 42, now), null);
+    process.env.PREMIUM_LEGACY_ORDER_OWNERS = JSON.stringify({ LEGACY: 42 });
+    const session = createPremiumSession(code, 42, now);
+    assert.ok(session);
+    assert.equal(createPremiumSession(code, 43, now), null);
+    assert.equal(verifyPremiumToken(session.token, "session", now).userId, 42);
+    process.env.PREMIUM_LEGACY_ORDER_OWNERS = "broken";
+    assert.equal(createPremiumSession(code, 42, now), null);
+  } finally {
+    for (const [key, value] of [["PREMIUM_ACCESS_SECRET", oldSecret], ["PREMIUM_LEGACY_ORDER_OWNERS", oldOwners]]) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
   }
 });

@@ -1,0 +1,19 @@
+@media print {
+  @page { size: A4; margin: 16mm; }
+  body { background: white !important; color: #111 !important; font-size: 11pt; }
+  .report { width: 100%; max-width: none; }
+  .report * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .report .report-grid { display: block; }
+  .report .report-card, .report .evidence-record, .report figure, .report .bar, .report .insight { break-inside: avoid; box-shadow: none; }
+  .report h2, .report h3 { break-after: avoid; }
+  .report p { orphans: 3; widows: 3; overflow-wrap: anywhere; }
+  .no-print, .report-actions, .site-header, body > footer { display: none !important; }
+  .report canvas { max-width: 100% !important; }
+  .report > .report-card { break-inside: auto; }
+  .report .report-card { border: 0; padding: 10px 0; }
+  .report .report-grid .report-card { break-inside: avoid; }
+  .report .facets > div { padding: 4px 0; }
+  .report .bars { gap: 12px; }
+  .report-heading { margin-bottom: 20px; }
+  .report > section > .eyebrow { display: block; break-after: avoid; }
+}

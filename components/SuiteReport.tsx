@@ -1,4 +1,7 @@
 import BigFiveResults from "./BigFiveResults";
+import InterestRadar from "./InterestRadar";
+import "./report-print.css";
+import EvidenceFeedback from "./social/EvidenceFeedback";
 import { report, type Profile, type SuiteBanks } from "@/lib/positioning";
 import { valueDescriptions } from "@/lib/values";
 import {
@@ -72,6 +75,7 @@ export default function SuiteReport({
         <p>
           {p.stage} · {p.direction}
         </p>
+        <p className="small">生成日期：{new Date().toLocaleDateString("zh-CN")} · 规则版本 {r.version}</p>
       </header>
       <section className="summary">
         <span className="eyebrow">先读这里 / 四维分开看</span>
@@ -108,6 +112,7 @@ export default function SuiteReport({
       <section className="report-card">
         <span className="eyebrow">02 / 霍兰德职业兴趣</span>
         <h2>什么让你愿意靠近</h2>
+        <InterestRadar scores={r.interest} />
         <Scores scores={r.interest} names={hollandNames} />
         <p>
           {r.interestTop.length
@@ -165,6 +170,7 @@ export default function SuiteReport({
                     {e[key as EvidenceField].trim() || "暂未提供"}
                   </p>
                 ))}
+                <EvidenceFeedback evidenceItemId={`evidence-${i}`} summary={`${evidenceCategories[i]}：${e.context}\n本人行动：${e.action}\n结果：${e.outcome}`.slice(0, 2000)} />
               </>
             )}
           </div>

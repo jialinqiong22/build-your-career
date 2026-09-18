@@ -19,6 +19,7 @@
     "@react-email/components": "^1.0.12",
     "@vercel/functions": "^3.9.5",
     "bcrypt": "^6.0.0",
+    "chart.js": "^4.5.1",
     "drizzle-orm": "^0.45.2",
     "next": "^15.5.25",
     "pg": "^8.23.0",

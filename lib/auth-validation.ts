@@ -1,5 +1,3 @@
-export type Identifier = { kind: "email" | "phone"; value: string };
-
 export class AuthError extends Error {
   status: number;
   retryAfter?: number;
@@ -10,31 +8,25 @@ export class AuthError extends Error {
   }
 }
 
-export function normalizeIdentifier(input: unknown): Identifier {
+export function normalizeEmail(input: unknown): string {
   if (typeof input !== "string" || input.length > 254)
-    throw new AuthError("请输入有效的手机号或邮箱。");
-  const value = input.trim();
-  if (value.includes("@")) {
-    const email = value.toLowerCase();
-    const parts = email.split("@");
-    if (
-      parts.length !== 2 ||
-      parts[0].length > 64 ||
-      !/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(
-        email,
-      )
-    )
-      throw new AuthError("请输入有效的邮箱地址。");
-    return { kind: "email", value: email };
-  }
-  const compact = value.replace(/[ ()-]/g, "");
-  const phone = /^1[3-9]\d{9}$/.test(compact) ? `+86${compact}` : compact;
+    throw new AuthError("请输入有效的邮箱地址。");
+  const email = input.trim().toLowerCase();
+  const parts = email.split("@");
   if (
-    !/^\+[1-9]\d{7,14}$/.test(phone) ||
-    (phone.startsWith("+86") && !/^\+861[3-9]\d{9}$/.test(phone))
+    parts.length !== 2 ||
+    parts[0].length > 64 ||
+    !/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(
+      email,
+    )
   )
-    throw new AuthError("请输入大陆11位手机号，或带 +国家区号的完整号码。");
-  return { kind: "phone", value: phone };
+    throw new AuthError("请输入有效的邮箱地址。");
+  return email;
+}
+
+export function requirePolicyAcceptance(input: unknown) {
+  if (input !== true)
+    throw new AuthError("请先阅读并同意隐私政策和用户协议。");
 }
 
 export function normalizeUsername(input: unknown): string {
