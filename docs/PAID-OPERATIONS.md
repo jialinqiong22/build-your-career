@@ -30,3 +30,7 @@ node --experimental-strip-types scripts/issue-access-code.mjs --order ORDER_2026
 `GET /api/premium/access` 返回 `{configured,active,plan,canPrint,expiresAt}`；`GET /api/premium/bank` 按权益返回50或120题及可选九型；`POST /api/premium/report` 校验对应题库和完成度；`?format=pdf` 仅允许guided。浏览器原生打印、截图或已下载内容无法远程禁止。
 
 无支付API、自动订阅和自动扣费。本次生产环境仍缺少账号及套餐配置，真实付费联调尚待配置完成。
+
+## 注销与已购权益
+
+用户可在 `/my-assessments` 自助注销账号（密码二次确认，立即生效），会话、云端测评记录与社交邀请随之级联删除。已兑换的套餐凭据绑定账号ID，账号删除后自动失效；兑换码本身无法在新账号重复使用。用户注销前咨询退款或数据导出时，仍通过 Crisp 人工处理；注销后如需恢复，只能重新注册，历史履约记录按运营保留策略处理。

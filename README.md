@@ -1,8 +1,8 @@
 # 观己 · 个人定位仪
 
-跨专业的学生个人探索工具。免费IPIP-50大五；完整服务包含IPIP-NEO-120、兴趣、价值观、行为经历、PDF及沟通。规则生成结果，无AI接口。已加入Neon邮箱密码账号系统，账号不自动关联套餐或云端报告。中文适配不是经过验证的标准中文量表。
+跨专业的学生个人探索工具。免费IPIP-50大五；完整服务包含IPIP-NEO-120、兴趣、价值观、行为经历、PDF及沟通。规则生成结果，无AI接口。已加入Neon邮箱密码账号系统，注册需邮箱验证码，支持验证码找回密码与自助注销；账号不自动关联套餐或云端报告。中文适配不是经过验证的标准中文量表。
 
-账号配置、数据库结构与验收：[docs/ACCOUNT-AUTH.md](docs/ACCOUNT-AUTH.md)。注册入口 `/register`，登录入口 `/login`。
+账号配置、数据库结构与验收：[docs/ACCOUNT-AUTH.md](docs/ACCOUNT-AUTH.md)。注册入口 `/register`（邮箱验证码两步），登录入口 `/login`，忘记密码 `/forgot-password`，注销在 `/my-assessments` 的账号与数据区块。
 
 当前规格：[docs/V4-SPECIFICATION.md](docs/V4-SPECIFICATION.md)。当前模型与规则：`lib/positioning.ts`；`lib/assessment.ts`保留作旧版回归参考，不用于V4界面和接口。
 
