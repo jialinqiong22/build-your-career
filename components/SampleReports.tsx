@@ -25,6 +25,9 @@ export default function SampleReports() {
       <div className="landing-cases-grid">
         {sampleReports.map((report) => (
           <article className="landing-case" key={report.id}>
+            <div className="case-avatar">
+              <img src={`/avatars/${report.avatar}.svg`} alt="" width={56} height={56} loading="lazy" />
+            </div>
             <div className="case-badges">
               {scopeBadge(report)}
               {report.tierLabel && <span className="case-badge case-badge-tier">{report.tierLabel}</span>}

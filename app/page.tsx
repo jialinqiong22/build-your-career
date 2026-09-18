@@ -4,7 +4,6 @@ import ModuleCatalog from "@/components/ModuleCatalog";
 import AuthNav from "@/components/AuthNav";
 import ReportPreview from "@/components/ReportPreview";
 import SampleReports from "@/components/SampleReports";
-import TestimonialPlaceholder from "@/components/TestimonialPlaceholder";
 import LandingFaq from "@/components/LandingFaq";
 import authStyles from "@/components/auth.module.css";
 
@@ -49,7 +48,6 @@ export default function Home() {
           <Link className="primary" href="/big-five">开始50题免费大五 ↗</Link>
         </section>
         <PlanCards />
-        <TestimonialPlaceholder />
         <section className="landing-faq" aria-labelledby="faq-title">
           <span className="eyebrow">开始之前</span><h2 id="faq-title">你可能还想知道</h2>
           <LandingFaq />

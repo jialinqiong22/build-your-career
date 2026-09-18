@@ -1,0 +1,5 @@
+Animal avatars used by the landing-page sample-reports section
+(public/avatars/*.svg) are from Twemoji, maintained by jdecked:
+https://github.com/jdecked/twemoji (fork of twitter/twemoji)
+License: CC-BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+Files: fox 1f98a, dog 1f436, rabbit 1f430, panda 1f43c, koala 1f428, tiger 1f42f.

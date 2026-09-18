@@ -9,6 +9,8 @@ export type SampleScope = "free" | "standard";
 
 export interface SampleReport {
   id: string;
+  /** Animal avatar file name under public/avatars (Twemoji, CC-BY 4.0). */
+  avatar: "fox" | "dog" | "rabbit" | "panda" | "koala" | "tiger";
   scope: SampleScope;
   persona: string;
   tier?: "limited" | "some" | "rich";
@@ -29,6 +31,7 @@ export const sampleReports: SampleReport[] = [
   {
     id: "free-nyu-econ",
     scope: "free",
+    avatar: "fox",
     persona: "示例 · NYU · 大二 · Economics",
     headline: "免费版先回答一件事：你通常怎么做事。",
     bigFive: [
@@ -39,6 +42,7 @@ export const sampleReports: SampleReport[] = [
   {
     id: "std-fudan-finance",
     scope: "standard",
+    avatar: "dog",
     persona: "示例 · 复旦大学 · 大三 · Finance",
     tier: "some",
     tierLabel: "经历中等",
@@ -56,6 +60,7 @@ export const sampleReports: SampleReport[] = [
   {
     id: "free-manchester-arthistory",
     scope: "free",
+    avatar: "rabbit",
     persona: "示例 · Manchester · 大三 · Art History",
     headline: "开放性明显突出；免费版不解释原因，只呈现倾向。",
     bigFive: [
@@ -66,6 +71,7 @@ export const sampleReports: SampleReport[] = [
   {
     id: "std-tongji-engineering",
     scope: "standard",
+    avatar: "panda",
     persona: "示例 · 同济大学 · 大四 · Engineering",
     tier: "some",
     tierLabel: "经历中等",
@@ -83,6 +89,7 @@ export const sampleReports: SampleReport[] = [
   {
     id: "std-usc-math",
     scope: "standard",
+    avatar: "koala",
     persona: "示例 · USC · 大二 · Math",
     tier: "limited",
     tierLabel: "经历较少",
@@ -100,6 +107,7 @@ export const sampleReports: SampleReport[] = [
   {
     id: "std-ucl-physics",
     scope: "standard",
+    avatar: "tiger",
     persona: "示例 · UCL · 研一 · Physics",
     tier: "rich",
     tierLabel: "经历丰富",

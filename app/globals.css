@@ -53,8 +53,10 @@
 .landing-sample-task p { margin-bottom: 0; }
 .landing-cases > p { max-width: 710px; }
 .landing-cases-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 26px; }
-.landing-case { min-width: 0; padding: 24px; border: 1px solid var(--line); background: white; display: flex; flex-direction: column; }
-.case-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.landing-case { position: relative; min-width: 0; padding: 24px; border: 1px solid var(--line); background: white; display: flex; flex-direction: column; }
+.case-avatar { position: absolute; top: 16px; right: 16px; width: 56px; height: 56px; }
+.case-avatar svg { width: 100%; height: 100%; display: block; }
+.case-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; padding-right: 62px; }
 .case-badge { font-size: 11px; padding: 3px 8px; border: 1px solid var(--klein-line); color: var(--klein); background: var(--klein-soft); }
 .case-badge[data-source="sample"] { border-color: var(--line); color: var(--muted); background: #f5f5f5; }
 .case-badge-real { border-style: dashed; }
@@ -74,10 +76,6 @@
 .landing-case details strong { font-weight: 600; }
 .landing-case .case-task { background: #f5f5f5; padding: 12px; margin: 12px 0 16px; font-size: 13px; }
 .landing-case .case-task p { margin: 4px 0 0; }
-.landing-voices > p { max-width: 710px; }
-.landing-voices-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 26px; }
-.landing-voice-slot { min-height: 120px; padding: 18px; border: 1px dashed var(--klein-line); color: var(--muted); font-size: 13px; display: flex; align-items: center; }
-.landing-voices-actions { margin-top: 18px; }
 .landing-module-shorttime { flex-shrink: 0; font-size: 12px; color: var(--muted); }
 .landing-faq-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-top: 22px; }
 .landing-faq-tabs button { padding: 10px 16px; font-size: 14px; color: var(--muted); background: transparent; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; min-height: 44px; }
@@ -121,8 +119,6 @@
   .landing-sample { padding: 20px; }
   .landing-cases-grid { grid-template-columns: 1fr; }
   .landing-case { padding: 20px; }
-  .landing-voices-grid { grid-template-columns: 1fr; }
-  .landing-voice-slot { min-height: 80px; }
   .landing-module-shorttime { display: none; }
   .landing-comparison table { font-size: 12px; }
   .landing-comparison th, .landing-comparison td { padding: 12px 5px; }
