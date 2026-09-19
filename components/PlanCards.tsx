@@ -1,4 +1,5 @@
 import Link from "next/link";
+import WeChatContact from "./WeChatContact";
 
 export default function PlanCards() {
   return (
@@ -14,6 +15,7 @@ export default function PlanCards() {
           <p>补完价值观、兴趣、潜力证据三块，结合大五50题，生成在线结构化定位小结。</p>
           <ul><li>四个核心维度，分别呈现</li><li>区分自述证据与待验证假设</li><li>九型动机反思，可选跳过</li><li>登录后保存进度与查看历史</li></ul>
           <p className="small">适合想先理清自己，还没决定要不要找人聊的人。</p>
+          <WeChatContact plan="standard" />
           <Link className="primary" href="/premium?plan=standard">先完整测一遍 ↗</Link>
         </article>
         <article className="report-card">
@@ -23,6 +25,7 @@ export default function PlanCards() {
           <p>包含¥9.9的全部权益，增加细分特质、完整PDF与一次1对1沟通。</p>
           <ul><li>大五120题与30项细分特质</li><li>完整PDF报告，便于留存</li><li>一次人工1对1沟通</li><li>一起梳理具体可以做的事</li></ul>
           <p className="small">120题需独立完整作答，不是在50题之后追加70题。</p>
+          <WeChatContact plan="guided" />
           <Link className="primary" href="/premium?plan=guided">预约完整定位＋沟通 ↗</Link>
         </article>
       </div>

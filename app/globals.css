@@ -103,6 +103,43 @@
 .landing-plan-grid .price span { font: 400 12px var(--font-body); color: var(--muted); }
 .landing-plan-grid ul { padding-left: 20px; line-height: 2; }
 .landing-plan-grid .primary { margin-top: auto; }
+.wechat-contact {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  margin: 24px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.wechat-qr-frame {
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #e5e9e7;
+}
+.wechat-qr-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.wechat-contact-copy h4 {
+  margin: 8px 0 9px;
+  font-size: 17px;
+  line-height: 1.45;
+}
+.wechat-contact-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+.landing-plan-grid .wechat-contact {
+  grid-template-columns: 142px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px;
+}
+.landing-plan-grid .wechat-contact-copy h4 { font-size: 15px; }
 .landing-text-link { display: inline-block; min-height: 44px; padding: 10px 0; text-decoration: underline; text-underline-offset: 4px; }
 .landing-faq { max-width: 850px; }
 .landing-faq details { border-bottom: 1px solid var(--line); }
@@ -129,6 +166,20 @@
   .landing-expand { font-size: 11px; }
   .landing-module-detail { padding-left: 0; }
   .landing-free { flex-direction: column; align-items: stretch; gap: 15px; }
+  .wechat-contact,
+  .landing-plan-grid .wechat-contact {
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+@media (max-width: 480px) {
+  .wechat-contact,
+  .landing-plan-grid .wechat-contact {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .wechat-qr-frame { width: min(168px, 100%); }
 }
 :root {
   --paper: #fafafa;

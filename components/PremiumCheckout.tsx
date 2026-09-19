@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
+import WeChatContact from "@/components/WeChatContact";
 export default function PremiumCheckout({
   contact,
   selectedPlan,
@@ -83,6 +84,7 @@ export default function PremiumCheckout({
             　登录后输入属于你的兑换码，开始对应套餐测评。99元套餐可保存PDF并预约沟通。
           </p>
         </div>
+        <WeChatContact plan={selectedPlan} />
         {contact ? (
           <div className="info-box">
             <b>联系渠道</b>
@@ -90,7 +92,8 @@ export default function PremiumCheckout({
           </div>
         ) : (
           <div className="info-box">
-            联系渠道尚未配置，目前暂不收款。请通过你与服务方已有的沟通渠道确认。
+            <b>购买前请先联系</b>
+            <p>请使用上方微信二维码确认服务内容与开通安排；未确认前请不要直接转账。</p>
           </div>
         )}
         {status && !status.configured && (
