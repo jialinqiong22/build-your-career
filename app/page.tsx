@@ -4,7 +4,6 @@ import AuthNav from "@/components/AuthNav";
 import LandingFaq from "@/components/LandingFaq";
 import PlanCards from "@/components/PlanCards";
 import authStyles from "@/components/auth.module.css";
-import { landingSamples } from "@/lib/decide";
 
 export const metadata: Metadata = {
   title: "观己 · 探索你的优势",
@@ -64,9 +63,9 @@ export default function Home() {
           <article className="landing-memo" aria-label="比如这样">
             <span className="eyebrow">比如这样</span>
             <p className="landing-memo-label">你的优势</p>
-            <p className="landing-conflict">{landingSamples.named.conflict}</p>
+            <p className="landing-conflict">例如：霍兰德 RIA，九型 7w6；大五显示五个维度的分数，价值观列出你主动选择的三项诉求。</p>
             <p className="landing-memo-label">你可以先做的一件事</p>
-            <p>{landingSamples.named.experiment}</p>
+            <p>先保存四个模块的统一结果图，再带着一个想讨论的求职定位问题预约沟通。这里展示的是结果样例。</p>
           </article>
         </section>
 
@@ -81,8 +80,8 @@ export default function Home() {
             </article>
             <article className="landing-panel landing-panel-after">
               <p className="landing-memo-label">看完之后</p>
-              <h3>{landingSamples.open.conflict}</h3>
-              <p>{landingSamples.open.experiment}</p>
+              <h3>能分别说清做事倾向、兴趣、取舍与动机</h3>
+              <p>保存各模块结果，带着具体问题和咨询老师讨论；下一步由你的目标与实际条件一起决定。</p>
             </article>
           </div>
         </section>
