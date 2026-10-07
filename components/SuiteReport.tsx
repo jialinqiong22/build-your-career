@@ -1,7 +1,8 @@
 import BigFiveResults from "./BigFiveResults";
 import InterestRadar from "./InterestRadar";
 import "./report-print.css";
-import EvidenceFeedback from "./social/EvidenceFeedback";
+import ResultImages from "./ResultImages";
+import { buildModuleCards, hollandCode, enneagramType } from "@/lib/module-results";
 import { report, type Profile, type SuiteBanks } from "@/lib/positioning";
 import { valueDescriptions } from "@/lib/values";
 import {
@@ -11,11 +12,6 @@ import {
   enneagramDescriptions,
   scoreInstrument,
 } from "@/lib/instruments";
-import {
-  evidenceCategories,
-  evidenceFields,
-  type EvidenceField,
-} from "@/lib/evidence";
 type Result = ReturnType<typeof report>;
 function Scores({
   scores,
@@ -57,14 +53,11 @@ export default function SuiteReport({
   banks: SuiteBanks;
   result: Result;
 }) {
-  const optional =
-    p.enneagramChoice === "take"
-      ? scoreInstrument(banks.enneagram, p.enneagramAnswers)
-      : [];
+  const motives = scoreInstrument(banks.enneagram, p.enneagramAnswers);
   const highest = Math.max(
-    ...optional.filter((x) => x.score !== null).map((x) => x.score!),
+    ...motives.filter((x) => x.score !== null).map((x) => x.score!),
   );
-  const motive = optional.filter(
+  const motive = motives.filter(
     (x) => x.score !== null && highest - x.score <= 8,
   );
   return (
@@ -82,7 +75,7 @@ export default function SuiteReport({
         <h2>{r.summary}</h2>
         <p>{r.directionAdvice}</p>
         <p>
-          本报告没有个人定位总分、固定权重或岗位匹配百分比。偏好、经历和动机不能互相替代。
+          本报告没有个人定位总分、固定权重或岗位匹配百分比。各模块倾向不等于实际能力。
         </p>
       </section>
       <section className="report-card">
@@ -112,6 +105,7 @@ export default function SuiteReport({
       <section className="report-card">
         <span className="eyebrow">02 / 霍兰德职业兴趣</span>
         <h2>什么让你愿意靠近</h2>
+        <p><strong>兴趣代码：{hollandCode(r.interest) ?? "并列或信息不足，暂不确定唯一代码"}</strong></p>
         <InterestRadar scores={r.interest} />
         <Scores scores={r.interest} names={hollandNames} />
         <p>
@@ -141,57 +135,6 @@ export default function SuiteReport({
         </p>
       </section>
       <BigFiveResults items={banks.bigFive} answers={p.answers} />
-      <section className="report-card">
-        <span className="eyebrow">04 / 潜力证据与成长条件</span>
-        <h2>{r.evidence.label}</h2>
-        <p>{r.evidence.guidance}</p>
-        <p className="small">
-          {r.evidence.rule} 较完整记录 {r.evidence.count} 段；带结果线索{" "}
-          {r.evidence.traceable}{" "}
-          段。这里只是自述完整度，不是证据真伪或能力等级。
-        </p>
-        {p.evidence.map((e, i) => (
-          <div className="evidence-record" key={i}>
-            <h3>{evidenceCategories[i]}</h3>
-            {e.status === "none" ? (
-              <p>暂未提供经历，不代表缺少能力。</p>
-            ) : (
-              <>
-                <p className="small">
-                  {r.evidence.records[i].structured
-                    ? "有结构化自述可供回看"
-                    : "信息仍不完整，作为待补充线索"}{" "}
-                  · 未外部核验
-                </p>
-                {Object.entries(evidenceFields).map(([key, label]) => (
-                  <p key={key}>
-                    <b>{label}</b>
-                    <br />
-                    {e[key as EvidenceField].trim() || "暂未提供"}
-                  </p>
-                ))}
-                <EvidenceFeedback evidenceItemId={`evidence-${i}`} summary={`${evidenceCategories[i]}：${e.context}\n本人行动：${e.action}\n结果：${e.outcome}`.slice(0, 2000)} />
-              </>
-            )}
-          </div>
-        ))}
-      </section>
-      <section className="report-card">
-        <h2>哪些条件可能帮助你发挥</h2>
-        {r.growth.map((g, i) => (
-          <div key={i}>
-            <h3>{g.category} · 你提供的条件</h3>
-            <p>已有支持：{g.support || "尚未说明"}</p>
-            <p>希望补充：{g.need || "尚未说明"}</p>
-          </div>
-        ))}
-        {!r.growth.length && (
-          <p>尚未提供实际支持条件，下面仅是基于工作方式的待验证假设。</p>
-        )}
-        {r.conditions.map((c) => (
-          <p key={c}>{c}</p>
-        ))}
-      </section>
       <section className="task-card">
         <span className="eyebrow">YOUR NEXT 7 DAYS</span>
         <h2>用一次行动，验证一条线索。</h2>
@@ -208,16 +151,14 @@ export default function SuiteReport({
         )}
       </section>
       <section className="report-card">
-        <span className="eyebrow">05 / 九型人格 · 可选补充</span>
+        <span className="eyebrow">04 / 九型人格</span>
         <h2>核心动机反思</h2>
-        {p.enneagramChoice === "skip" ? (
-          <p>你跳过了本模块，四维基础画像不受影响。需要时可返回补充。</p>
-        ) : (
-          <>
+        <p><strong>探索性类型：{enneagramType(motives) ?? "并列或信息不足，暂不确定"}</strong></p>
+        <>
             <p>
-              以下是自述的动机倾向，不是诊断、隐藏恐惧的确定结论或唯一人格类型，不参与前四维计分和摘要。
+              以下是自述的动机倾向，不是诊断或确定的人格结论，不改变其他三个模块的得分。
             </p>
-            <Scores scores={optional} names={enneagramNames} />
+            <Scores scores={motives} names={enneagramNames} />
             <p>
               {motive.length > 0 && motive.length <= 3
                 ? `本次可对照的倾向：${motive.map((d) => enneagramNames[d.dimension]).join("、")}。`
@@ -239,13 +180,13 @@ export default function SuiteReport({
             <p>
               反思：最近一次重要选择中，你在争取什么、担心失去什么？这种动机在何时帮助了你，又在何时限制了选择？请用真实事件检查，而不是接受标签。
             </p>
-          </>
-        )}
+        </>
       </section>
+      <ResultImages cards={buildModuleCards(p,banks)} />
       <section className="quality">
         <h3>如何理解与分享</h3>
         <p>
-          核心问卷有效回答 {r.answered}/{r.coreTotal}
+          价值观、兴趣与大五有效回答 {r.answered}/{r.coreTotal}
           。0–100为线性描述分，不是人群百分位。中文适配、原创题与整套规则未建立本地常模。
         </p>
         {r.flags.map((x) => (

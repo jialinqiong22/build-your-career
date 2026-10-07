@@ -5,7 +5,7 @@ export default function Sources() {
     <>
       <header className="site-header">
         <Link className="brand" href="/">
-          观己<span>BUILD YOUR CAREER</span>
+          观己<span>ANCHOR POINT CAREER</span>
         </Link>
       </header>
       <main className="standalone">
@@ -20,26 +20,26 @@ export default function Sources() {
           </p>
         </section>
         <section className="report-card">
-          <h2>霍兰德兴趣与九型补充</h2>
+          <h2>霍兰德兴趣与九型人格</h2>
           <p>
             兴趣模块为依据RIASEC六类活动编写的原创{hollandQuestions.length}
             题探索版；九型为本项目原创{enneagramQuestions.length}
             题动机反思。都不是经典标准量表，不复制第三方网站题库、SDS或RHETI题目。高分不等于能力、临床结论或职业成功概率。
           </p>
           <p>
-            九型可跳过，单独解释，不参与核心报告摘要或证据分档。没有题库商用授权时，不因网站免费或代码仓库带MIT许可就擅自复用题目。
+            九型是完整测评的必做模块，单独解释。唯一最高分用于推导探索性类型，相邻两型中较高的一型作为翼型；并列时明确标注未分化。没有题库商用授权时，不因网站免费或代码仓库带MIT许可就擅自复用题目。
           </p>
           <p>
             <a href="/licenses/additional-sources.txt">来源核验与原创声明</a>
           </p>
         </section>
         <section className="report-card">
-          <h2>证据信息分档，而非权重总分</h2>
+          <h2>四个模块分别理解</h2>
           <p>
-            五类经历分别记录情境、本人行动、结果、持续过程、结果线索和成长条件。没有结构较完整的记录为“信息较少”；一段完整记录，或多段尚无结果线索，为“已有一些”；至少两段不重复的较完整记录，且其中一段提供结果线索，为“较丰富”。这只是字段完整度的启发式规则，不判断真实性或能力。
+            完整测评包含大五人格、霍兰德职业兴趣、职业价值观和九型人格。已移除经历填写及证据信息分档，不合成人格或岗位匹配总分。
           </p>
           <p>
-            分档不读取学历、年级或方向清晰度，不按字数排名。阶段与方向仅改变引导，不产生总分；提供的支持条件单独呈现。自述再丰富也未经外部核验。
+            完成后可在浏览器中生成四张模块结果图及一张统一长图，再自行发送给咨询老师，确认求职定位沟通的时间和安排。
           </p>
         </section>
         <section className="report-card">

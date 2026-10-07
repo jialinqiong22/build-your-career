@@ -8,6 +8,7 @@ import {
   validProfile,
   finished,
   completion,
+  withoutExperience,
   report,
   stages,
   directions,
@@ -17,7 +18,8 @@ import {
 import { valueQuestions, valueNames } from "@/lib/values";
 import { hollandQuestions } from "@/lib/instruments";
 import Questionnaire from "./Questionnaire";
-import EvidenceForm from "./EvidenceForm";
+import ResultImages from "./ResultImages";
+import { buildModuleCards } from "@/lib/module-results";
 import SuiteReport from "./SuiteReport";
 import { useAuth } from "./AuthProvider";
 import CloudProgress from "./CloudProgress";
@@ -26,8 +28,7 @@ const titles = [
   "职业价值观",
   "霍兰德职业兴趣",
   "大五人格",
-  "潜力证据与成长条件",
-  "九型人格（可选）",
+  "九型人格",
 ];
 const fit = ["非常不符合", "不太符合", "中立 / 一般", "比较符合", "非常符合"];
 export default function PositioningSuite({
@@ -81,7 +82,7 @@ export default function PositioningSuite({
           if (raw) {
             const stored = JSON.parse(raw);
             if (validProfile(stored, b)) {
-              setP(stored);
+              setP(withoutExperience(stored));
               setSave(true);
               setNotice(
                 "已恢复本机记录。旧版V3不会自动转换，新旧记录分开保存。",
@@ -116,7 +117,7 @@ export default function PositioningSuite({
   }, [p, ready, save, banks, storageKey]);
   function change(next: Profile) {
     cancelGeneration();
-    setP(next);
+    setP(withoutExperience(next));
     setResult(null);
   }
   function navigate(n: number) {
@@ -167,7 +168,7 @@ export default function PositioningSuite({
     if (pending.current) return;
     if (!banks || !finished(p, banks)) {
       setError(
-        "请完成四项基础模块，并选择完成或跳过九型。每道题都可以明确跳过。",
+        "请完成四个测评模块。每道题都可以明确跳过。",
       );
       return;
     }
@@ -242,8 +243,7 @@ export default function PositioningSuite({
               version: VERSION,
               profile: p,
               report: report(p, banks),
-              optional:
-                p.enneagramChoice === "take" ? p.enneagramAnswers : null,
+              enneagram: p.enneagramAnswers,
             },
             null,
             2,
@@ -264,9 +264,9 @@ export default function PositioningSuite({
     <>
       <header className="site-header">
         <Link className="brand" href="/">
-          观己<span>BUILD YOUR CAREER</span>
+          观己<span>ANCHOR POINT CAREER</span>
         </Link>
-        <span className="edition">四维基础 · 一项可选</span>
+        <span className="edition">四个必做模块</span>
       </header>
       <main>
         {preview && (
@@ -315,14 +315,14 @@ export default function PositioningSuite({
                 导出我的数据
               </button>
               <button className="secondary" onClick={() => navigate(0)}>
-                修改回答与经历
+                修改回答
               </button>
               <button className="text-button" onClick={clear}>
                 清除本机V4记录
               </button>
             </div>
             <p className="small no-print">
-              PDF通过浏览器“另存为PDF”保存。报告包含个人自述，请妥善保管。
+              四个模块可统一生成结果图片。PDF通过浏览器“另存为PDF”保存，请妥善保管。
             </p>
           </>
         ) : (
@@ -348,29 +348,29 @@ export default function PositioningSuite({
                     </span>
                     {title}
                     {i > 0 && <small style={{ display: "block" }}>
-                      {i === 5 && p.enneagramChoice === "skip" ? "可选 · 已跳过" : done[i - 1] ? "已完成" : i <= 3 ? `${moduleCounts[i - 1]?.answered ? "进行中" : "未开始"} ${moduleCounts[i - 1]?.answered}/${moduleCounts[i - 1]?.total}` : i === 4 ? `${p.evidence.some(e => e.status !== "unanswered") ? "进行中" : "未开始"} ${p.evidence.filter(e => e.status !== "unanswered").length}/${p.evidence.length}` : p.enneagramChoice === "take" ? `进行中 ${Object.keys(p.enneagramAnswers).length}/${banks.enneagram.length}` : "可选 · 未开始"}
+                      {done[i - 1] ? "已完成" : i <= 3 ? (moduleCounts[i - 1]?.answered ? "进行中 " : "未开始 ") + moduleCounts[i - 1]?.answered + "/" + moduleCounts[i - 1]?.total : (Object.keys(p.enneagramAnswers).length ? "进行中 " : "未开始 ") + Object.keys(p.enneagramAnswers).length + "/" + banks.enneagram.length}
                     </small>}
                   </button>
                 ))}
               </nav>
               <p className="small">
-                可切换模块、分次完成。跳过问题不计低分；九型可整项跳过。
+                四个模块都需要完成，可切换模块、分次作答。无法判断的题目不计低分。
               </p>
             </aside>
             <section className="quiz-panel">
               <div className="eyebrow">
-                {step === 0 ? "准备开始" : `模块 ${step} / 5`}
+                {step === 0 ? "准备开始" : `模块 ${step} / 4`}
               </div>
               <h1>{titles[step]}</h1>
               {step === 0 && (
                 <>
                   <p className="lead">
-                    四项基础信息分开解读，第五项仅补充动机。不需要已有实习，也不生成唯一职业答案。
+                    大五、霍兰德兴趣、职业价值观、九型分别解读。不需要填写经历；做完后保存四个结果，添加微信咨询。
                   </p>
                   <div className="info-box">
                     <p>
                       原创职业价值观40题、霍兰德{hollandQuestions.length}
-                      题、大五{banks.bigFive.length}题、五类经历记录，以及可选九型
+                      题、大五{banks.bigFive.length}题，以及九型
                       {banks.enneagram.length}
                       题。请分次完成，完整套餐不是七分钟测试。
                     </p>
@@ -378,7 +378,7 @@ export default function PositioningSuite({
                       生成报告时，回答会提交本站服务器用于校验和计算。默认仅页面暂存；选择本机保存后保留至你清除；主动选择云端保存时才写入账号数据库。报告由你决定是否分享。
                     </p>
                     <p>
-                      题目可选无法判断；证据分档只描述填写完整度，不测谎、不评价学历或个人能力。
+                      题目可选无法判断；各模块分别呈现结果，不评价学历或个人能力。
                     </p>
                   </div>
                   <label className="checkline">
@@ -564,67 +564,16 @@ export default function PositioningSuite({
               )}
               {step === 4 && (
                 <>
-                  <EvidenceForm
-                    entries={p.evidence}
-                    onChange={(evidence) => change({ ...p, evidence })}
+                  <p className="lead">九型为必做模块。结果按九类得分与相邻类型生成探索性类型提示；并列或信息不足时不强行定型。</p>
+                  <Questionnaire
+                    key={"enneagram-" + revision}
+                    title="九型人格"
+                    items={banks.enneagram}
+                    answers={p.enneagramAnswers}
+                    onChange={(enneagramAnswers) => change({ ...p, enneagramAnswers })}
+                    labels={fit}
+                    onComplete={() => preview ? void generate() : requireAuth(generate)}
                   />
-                  <button
-                    className="primary"
-                    onClick={() => {
-                      if (!done[3])
-                        setError("请为每类经历选择有经历或暂不提供。");
-                      else next();
-                    }}
-                  >
-                    进入可选九型 ↗
-                  </button>
-                </>
-              )}
-              {step === 5 && (
-                <>
-                  <p className="lead">
-                    九型仅用于动机反思，可跳过，不改变前四项计分、证据分档和报告摘要。
-                  </p>
-                  <div className="quiz-actions">
-                    <button
-                      className="secondary"
-                      aria-pressed={p.enneagramChoice === "skip"}
-                      onClick={() => {
-                        change({
-                          ...p,
-                          enneagramChoice: "skip",
-                          enneagramAnswers: {},
-                        });
-                        setError("");
-                      }}
-                    >
-                      跳过九型，保留基础画像
-                    </button>
-                    <button
-                      className="primary"
-                      aria-pressed={p.enneagramChoice === "take"}
-                      disabled={!banks.enneagram.length}
-                      onClick={() => change({ ...p, enneagramChoice: "take" })}
-                    >
-                      选择九型动机补充
-                    </button>
-                  </div>
-                  {p.enneagramChoice === "skip" && (
-                    <p>已跳过。已有九型回答会被移除，不进入报告。</p>
-                  )}
-                  {p.enneagramChoice === "take" && (
-                    <Questionnaire
-                      key={`enneagram-${revision}`}
-                      title="九型动机补充"
-                      items={banks.enneagram}
-                      answers={p.enneagramAnswers}
-                      onChange={(enneagramAnswers) =>
-                        change({ ...p, enneagramAnswers })
-                      }
-                      labels={fit}
-                      onComplete={() => preview ? void generate() : requireAuth(generate)}
-                    />
-                  )}
                   <div className="info-box">
                     <h3>生成前检查</h3>
                     <ul>
@@ -644,6 +593,7 @@ export default function PositioningSuite({
                   </div>
                 </>
               )}
+              {step > 0 && done[step - 1] && <ResultImages cards={buildModuleCards(p,banks).filter((_,i)=>i===step-1)} />}
               {error && (
                 <p className="error" role="alert">
                   {error}
@@ -662,7 +612,7 @@ export default function PositioningSuite({
         )}
       </main>
       <footer>
-        <span>观己 / BUILD YOUR CAREER</span>
+        <span>观己 / ANCHOR POINT CAREER</span>
         <Link href="/sources">来源、许可与方法</Link>
       </footer>
     </>

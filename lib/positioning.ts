@@ -10,8 +10,6 @@ import {
   hollandNames,
 } from "./instruments.ts";
 import {
-  blankEvidence,
-  evidenceBand,
   validEvidence,
   evidenceCategories,
   type Evidence,
@@ -44,7 +42,7 @@ export type Profile = {
   target: string;
   answers: Record<string, number | null>;
   priorities: ValueDimension[];
-  evidence: Evidence[];
+  evidence?: Evidence[]; // Legacy records only; no longer collected.
   enneagramChoice: "undecided" | "skip" | "take";
   enneagramAnswers: Record<string, number | null>;
 };
@@ -56,8 +54,7 @@ export function blank(): Profile {
     target: "",
     answers: {},
     priorities: [],
-    evidence: evidenceCategories.map(() => blankEvidence()),
-    enneagramChoice: "undecided",
+    enneagramChoice: "take",
     enneagramAnswers: {},
   };
 }
@@ -95,9 +92,8 @@ export function validProfile(
     p.priorities.length <= 3 &&
     new Set(p.priorities).size === p.priorities.length &&
     p.priorities.every((x) => valueNames.includes(x)) &&
-    Array.isArray(p.evidence) &&
-    p.evidence.length === evidenceCategories.length &&
-    p.evidence.every(validEvidence) &&
+    (p.evidence === undefined || (Array.isArray(p.evidence) &&
+    p.evidence.length === evidenceCategories.length && p.evidence.every(validEvidence))) &&
     ["undecided", "skip", "take"].includes(p.enneagramChoice) &&
     validAnswers(p.enneagramAnswers, banks.enneagram) &&
     (p.enneagramChoice === "take" ||
@@ -113,9 +109,7 @@ export function completion(p: Profile, banks: SuiteBanks) {
     handled(valueQuestions, p.answers) && p.priorities.length === 3,
     handled(hollandQuestions, p.answers),
     handled(banks.bigFive, p.answers),
-    p.evidence.every((e) => e.status !== "unanswered"),
-    p.enneagramChoice === "skip" ||
-      (p.enneagramChoice === "take" &&
+    (p.enneagramChoice === "take" &&
         handled(banks.enneagram, p.enneagramAnswers)),
   ];
 }
@@ -133,8 +127,7 @@ function leading<T extends { score: number | null }>(scores: T[]) {
 export function report(p: Profile, banks: SuiteBanks) {
   const interest = scoreInstrument(hollandQuestions, p.answers),
     values = scoreValues(p.answers),
-    traits = scoreBigFive(banks.bigFive, p.answers),
-    evidence = evidenceBand(p.evidence);
+    traits = scoreBigFive(banks.bigFive, p.answers);
   const interestTop = leading(interest),
     valueTop = leading(values);
   const interestPhrase = interestTop.length
@@ -159,11 +152,6 @@ export function report(p: Profile, banks: SuiteBanks) {
     flags.push(
       "有效回答都使用同一选项，建议复核是否反映你的真实差异；这不是真实性判断。",
     );
-  const growth = p.evidence.flatMap((e, i) =>
-    e.status === "some" && (e.support.trim() || e.need.trim())
-      ? [{ category: evidenceCategories[i], support: e.support, need: e.need }]
-      : [],
-  );
   const conditions: string[] = [];
   for (const d of traits) {
     if (d.score === null) continue;
@@ -203,12 +191,7 @@ export function report(p: Profile, banks: SuiteBanks) {
     conflicts.push(
       "先写下收入底线与可接受的时间投入，再比较机会，不预设必须牺牲哪一项。",
     );
-  const summary =
-    evidence.tier === "rich"
-      ? `你提供了${evidence.count}段结构较完整的自述。优先回看其中的行动与结果，再验证它们与你对${interestPhrase}的兴趣是否相互支持。`
-      : evidence.tier === "some"
-        ? `已有一部分具体经历可供对照。你对${interestPhrase}的兴趣仍需在不同情境中验证，不能仅凭一次经历认定能力。`
-        : `目前证据信息有限。可从${interestPhrase}和你主动选择的价值诉求出发，优先积累体验，不急着给自己定型。`;
+  const summary = "分别回看你对" + interestPhrase + "的兴趣、价值诉求、工作方式与动机倾向。保存四个模块的结果后，可以添加微信讨论求职定位。测评不直接证明能力或确定职业。";
   const directionAdvice = [
     "先试两类不同的小任务，不需要现在就决定未来。",
     "把不想要的内容写成具体条件，同时为尚未体验的活动保留空间。",
@@ -222,8 +205,6 @@ export function report(p: Profile, banks: SuiteBanks) {
     traits,
     interestTop,
     valueTop,
-    evidence,
-    growth,
     conditions,
     conflicts,
     summary,
@@ -231,7 +212,13 @@ export function report(p: Profile, banks: SuiteBanks) {
     flags,
     answered,
     coreTotal,
-    next: evidence.next,
+    next: "保存四个模块的结果，选出最想讨论的问题，再添加微信确认咨询时间。",
     priorities: p.priorities,
   };
+}
+
+export function withoutExperience(p: Profile): Profile {
+  const current = { ...p };
+  delete current.evidence;
+  return { ...current, enneagramChoice: "take" };
 }

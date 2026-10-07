@@ -20,7 +20,7 @@ export default function SampleReports() {
       <span className="eyebrow">样 本 · 以下均为示例数据</span>
       <h2 id="cases-title">测完你会得到什么</h2>
       <p>
-        六份不同年级、专业与院校的示例，前两份展示免费大五能看到什么，其余四份展示¥9.9完整四维如何把价值观、兴趣与大五、经历证据放在一起。分数是量表内的倾向描述，不代表人群百分位、能力或成功概率；示例人物为虚构，院校名称仅用于设定场景。正式上线后展示的真实案例会先取得本人同意，并按来源标注。
+        六份不同年级、专业与院校的示例，前两份展示免费大五能看到什么，其余四份展示¥9.9完整四维如何把价值观、兴趣与大五、九型人格放在一起。分数是量表内的倾向描述，不代表人群百分位、能力或成功概率；示例人物为虚构，院校名称仅用于设定场景。正式上线后展示的真实案例会先取得本人同意，并按来源标注。
       </p>
       <div className="landing-cases-grid">
         {sampleReports.map((report) => (
@@ -30,11 +30,11 @@ export default function SampleReports() {
             </div>
             <div className="case-badges">
               {scopeBadge(report)}
-              {report.tierLabel && <span className="case-badge case-badge-tier">{report.tierLabel}</span>}
+
               {sourceBadge(report)}
             </div>
             <h3>{report.persona}</h3>
-            {report.tierNote && <p className="case-tier-note">{report.tierNote}</p>}
+
             <div className="bars">
               {report.bigFive.map(([name, score]) => (
                 <div className="bar" key={name}>
@@ -45,7 +45,7 @@ export default function SampleReports() {
             </div>
             {report.scope === "free" ? (
               <p className="case-free-note">
-                完整版在此基础上增加价值观、兴趣与经历证据，并把“是什么”讲成“下一步做什么”。
+                完整版在此基础上增加价值观、兴趣与九型人格，并把“是什么”讲成“下一步做什么”。
               </p>
             ) : (
               <>

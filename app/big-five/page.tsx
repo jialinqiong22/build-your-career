@@ -5,7 +5,8 @@ import BigFiveForm from "@/components/BigFiveForm";
 import BigFiveResults from "@/components/BigFiveResults";
 import PlanCards from "@/components/PlanCards";
 import CloudProgress from "@/components/CloudProgress";
-import ShareCard from "@/components/ShareCard";
+import ResultImages from "@/components/ResultImages";
+import { bigFiveCard } from "@/lib/module-results";
 import SocialCompare from "@/components/social/SocialCompare";
 import { validScores } from "@/lib/social-validation";
 import { questions50 } from "@/lib/bigfive/data50";
@@ -96,7 +97,7 @@ export default function FreeBigFive() {
     <>
       <header className="site-header">
         <Link className="brand" href="/">
-          观己<span>BUILD YOUR CAREER</span>
+          观己<span>ANCHOR POINT CAREER</span>
         </Link>
         <span className="edition">50题免费版</span>
       </header>
@@ -166,10 +167,10 @@ export default function FreeBigFive() {
         ) : result ? (
           <>
             <BigFiveResults items={questions50} answers={answers} />
-            <section className="info-box" aria-label="四维探索进度">
-              <h2>你已经完成工作方式这一块</h2>
-              <p>✓ 工作方式已完成 · 方向兴趣、价值取舍、行为证据：待解锁</p>
-              <p>大五结果帮助你了解通常怎么做事。投入哪个方向，还需要看你在意的回报、感兴趣的问题，以及能支持这些判断的真实经历。仅凭这一份结果，还不能下方向结论。</p>
+            <section className="info-box" aria-label="测评模块进度">
+              <h2>你已经完成大五人格模块</h2>
+              <p>✓ 工作方式已完成 · 霍兰德兴趣、职业价值观、九型人格：可继续完成</p>
+              <p>大五结果帮助你了解通常怎么做事。投入哪个方向，还需要看你在意的回报、感兴趣的问题。仅凭这一份结果，还不能下方向结论。</p>
             </section>
             <div className="report-actions">
               <button className="secondary" onClick={() => setResult(false)}>
@@ -183,7 +184,7 @@ export default function FreeBigFive() {
               </button>
             </div>
             <PlanCards />
-            <ShareCard scores={scoreBigFive(questions50, answers)} />
+            <ResultImages cards={[bigFiveCard(questions50,answers)]} />
             {validScores(socialScores) && <SocialCompare scores={socialScores} />}
           </>
         ) : (

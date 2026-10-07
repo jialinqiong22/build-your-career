@@ -14,33 +14,34 @@ const banks = { bigFive: questions120, enneagram: enneagramQuestions };
 function complete() {
   const p = blank();
   p.priorities = valueNames.slice(0, 3);
-  p.evidence = p.evidence.map((e) => ({ ...e, status: "none" }));
-  p.enneagramChoice = "skip";
+  p.enneagramChoice = "take";
+  for (const q of enneagramQuestions) p.enneagramAnswers[q.id] = 3;
   for (const q of [...valueQuestions, ...hollandQuestions, ...questions120])
     p.answers[q.id] = 3;
   return p;
 }
-test("V4 separates optional module and requires explicit completion", () => {
+test("V4 requires all four modules and explicit completion", () => {
   const p = complete();
   assert.equal(finished(p, banks), true);
-  assert.deepEqual(completion(p, banks), [true, true, true, true, true]);
+  assert.deepEqual(completion(p, banks), [true, true, true, true]);
   p.enneagramChoice = "undecided";
   assert.equal(finished(p, banks), false);
   p.enneagramChoice = "take";
+  p.enneagramAnswers = {};
   assert.equal(finished(p, banks), false);
   for (const q of enneagramQuestions) p.enneagramAnswers[q.id] = null;
   assert.equal(finished(p, banks), true);
   p.enneagramChoice = "skip";
   assert.equal(validProfile(p, banks), false);
 });
-test("optional motives cannot change any core score, tier, summary or next action", () => {
+test("Enneagram remains independent of other three module scores", () => {
   const p = complete(),
     baseline = report(p, banks);
   p.enneagramChoice = "take";
   for (const q of enneagramQuestions) p.enneagramAnswers[q.id] = 5;
   assert.deepEqual(report(p, banks), baseline);
 });
-test("stage and direction do not change evidence tiers or trait scores", () => {
+test("stage and direction do not change trait scores", () => {
   const p = complete(),
     baseline = report(p, banks);
   p.stage = "硕士应届";

@@ -7,7 +7,7 @@ import {valueQuestions,valueNames} from '../lib/values.ts';
 import {hollandQuestions,enneagramQuestions} from '../lib/instruments.ts';
 test('standard full suite computes 50-item report without paid 120 facets',()=>{
   const banks={bigFive:questions50,enneagram:enneagramQuestions};
-  const p=blank();p.priorities=valueNames.slice(0,3);p.enneagramChoice='skip';p.evidence=p.evidence.map(e=>({...e,status:'none'}));
+  const p=blank();p.priorities=valueNames.slice(0,3);p.enneagramChoice='take';for(const q of enneagramQuestions)p.enneagramAnswers[q.id]=3;
   for(const q of [...questions50,...valueQuestions,...hollandQuestions])p.answers[q.id]=3;
   assert.equal(finished(p,banks),true);
   assert.equal(validProfile(p,{...banks,bigFive:questions120}),false);

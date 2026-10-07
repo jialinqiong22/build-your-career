@@ -5,9 +5,9 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   referrer: "no-referrer",
-  title: "观己 · 个人定位仪 | Build Your Career",
+  title: "观己 · 个人定位仪 | Anchor Point Career",
   description:
-    "从兴趣、工作方式、价值观和真实经历理解自己。面向大学生与应届生的个人定位探索工具。",
+    "完成大五人格、霍兰德职业兴趣、职业价值观与九型人格，保存结果并预约求职定位咨询。",
 };
 
 export default function RootLayout({

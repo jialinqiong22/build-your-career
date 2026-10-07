@@ -36,31 +36,21 @@ export default function ModuleCatalog() {
       note: "120题提供30项细分特质，不是给50题简单追加70题。",
     },
     {
-      name: "潜力证据与成长条件",
+      name: "九型人格",
       tag: "基础 04",
-      count: "五类经历 · 行为化追问",
-      time: "约8–15分钟；没有经历可明确跳过",
-      shortTime: "约8–15分钟",
-      meaning: "记录具体问题、本人行动、结果、持续过程、反馈与支持条件。",
-      strength: "寻找可迁移线索，区分已有自述和待验证假设。",
-      note: "只分档信息完整度，不打能力分，不按学历、年级或字数排名。",
-    },
-    {
-      name: "九型人格 / 动机反思",
-      tag: "可选 05 · 套餐内",
       count: `原创${enneagramQuestions.length}题`,
       time: "约5–9分钟",
       shortTime: "约5–9分钟",
       meaning: "作为选择动机与反应模式的补充反思，不是深层恐惧的确定诊断。",
       strength: "帮助观察一种动机何时有帮助、何时限制选择。",
-      note: "本项目原创，非RHETI或经典标准量表；可整项跳过，不影响四维基础画像。",
+      note: "本项目原创，非RHETI或经典标准量表；必做模块；类型与翼型仅作为探索线索，不改变其他模块的得分。",
     },
   ];
   return (
-    <section className="module-catalog" id="modules" aria-label="四个核心维度与可选动机补充">
+    <section className="module-catalog" id="modules" aria-label="四个必做测评模块">
       <div className="section-label">先知道测什么，再开始</div>
-      <h2>四个核心维度，一项可选补充。</h2>
-      <p>根据所选版本，约35–60分钟梳理自己现在的位置。详情可以逐项展开。</p>
+      <h2>四个模块，分别认识自己。</h2>
+      <p>根据所选版本，可分次完成梳理自己现在的位置。详情可以逐项展开。</p>
       {modules.map((m, i) => (
         <details className="landing-module" key={m.name}>
           <summary>
@@ -88,8 +78,8 @@ export default function ModuleCatalog() {
       ))}
       <p className="small">
         以上均为阅读与作答估算，尚待学生试测校准，不是完成时限。基础完整流程预计约
-        {hollandQuestions.length > 30 ? "40–65" : "35–55"}
-        分钟，可本机保存后分次完成；九型另计。约7分钟仅指免费大五模块。
+        {hollandQuestions.length > 30 ? "35–60" : "30–50"}
+        分钟，可本机保存后分次完成，包含九型。约7分钟仅指免费大五模块。
       </p>
     </section>
   );

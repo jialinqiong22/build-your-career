@@ -12,8 +12,9 @@ written for this project after the user's acceptance of an original alternative
 on 2026-09-06. Four prompts per theme, interleaved. The interpretation prompts
 are also original. No RHETI or OEPS items are copied. This is NOT a classic,
 standard, or validated Enneagram instrument. Scores show agreement with these
-prompts, not diagnosed types or hidden fears. It is optional and does not enter
-core personal-positioning calculations. The optional reference link does not
+prompts, not diagnosed types or hidden fears. It is required in the four-module flow. Scores support exploratory type and
+adjacent-wing hints, with ties left unresolved; these rules are not validated
+personality classifications and do not change other module scores. The optional reference link does not
 send this app's answers to the third party. External sites have their own terms.
 https://enneagram-personality.com/zh-Hans
 https://enneagram-personality.com/en/test/terms

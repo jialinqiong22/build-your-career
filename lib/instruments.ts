@@ -234,7 +234,7 @@ export const instrumentMetadata = {
     source: "本项目原创36题，不是RHETI或OEPS经典量表",
     status: "original-exploratory",
     notice:
-      "未经心理测量验证，仅供自我反思；分数表示对这些描述的认同程度，不认定人格类型，不参与核心画像。",
+      "未经心理测量验证，仅供自我反思；作为四个必做模块之一，按得分提供探索性类型与翼型线索，不确定人格，也不改变其他模块得分。",
     externalUrl: "https://enneagram-personality.com/zh-Hans",
   },
 } as const;
